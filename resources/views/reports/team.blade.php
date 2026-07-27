@@ -68,21 +68,29 @@
         <!-- ផ្ទាំងកាត (Stats Cards) -->
         <div id="statsContainer" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="bg-gradient-to-br from-violet-600 to-purple-600 p-6 rounded-3xl shadow-[0_10px_30px_rgba(124,58,237,0.3)] text-white relative overflow-hidden">
-                <p class="text-[11px] font-bold text-white/80 uppercase tracking-wider">ចំណូលសរុប (TOTAL REVENUE)</p>
-                <h2 class="text-4xl font-black mt-1 sensitive-data" data-value="{{ number_format($totalRevenue ?? 0, 2) }} $">{{ number_format($totalRevenue ?? 0, 2) }} $</h2>
+                <!-- ១. ចំណូលសរុប (TOTAL REVENUE) -->
+<p class="text-[11px] font-bold text-white/80 uppercase tracking-wider">ចំណូលសរុប (TOTAL REVENUE)</p>
+<h2 class="text-4xl font-black mt-1 sensitive-data" data-value="{{ number_format($totalRevenue ?? 0, 2) }}">
+    $ {{ number_format($totalRevenue ?? 0, 2) }}
+</h2>
 
-                <div class="flex gap-4 mt-6">
-                    <div class="bg-white/10 p-3.5 rounded-xl w-full border border-white/20">
-                        <p class="text-[10px] font-bold text-white/80 uppercase">លក់រាយ (RETAIL)</p>
-                        <!-- 🟢 ភ្ជាប់ទិន្នន័យលក់រាយ -->
-                        <p class="font-black text-lg mt-0.5 sensitive-data" data-value="{{ number_format($retailRevenue ?? 0, 2) }} $">{{ number_format($retailRevenue ?? 0, 2) }} $</p>
-                    </div>
-                    <div class="bg-white/10 p-3.5 rounded-xl w-full border border-white/20">
-                        <p class="text-[10px] font-bold text-white/80 uppercase">បោះដុំ (WHOLESALE)</p>
-                        <!-- 🟢 ភ្ជាប់ទិន្នន័យបោះដុំ -->
-                        <p class="font-black text-lg mt-0.5 sensitive-data" data-value="{{ number_format($wholesaleRevenue ?? 0, 2) }} $">{{ number_format($wholesaleRevenue ?? 0, 2) }} $</p>
-                    </div>
-                </div>
+<div class="flex gap-4 mt-6">
+    <!-- ២. លក់រាយ (RETAIL) -->
+    <div class="bg-white/10 p-3.5 rounded-xl w-full border border-white/20">
+        <p class="text-[10px] font-bold text-white/80 uppercase">លក់រាយ (RETAIL)</p>
+        <p class="font-black text-lg mt-0.5 sensitive-data" data-value="{{ number_format($retailRevenue ?? 0, 2) }}">
+            $ {{ number_format($retailRevenue ?? 0, 2) }}
+        </p>
+    </div>
+
+    <!-- ៣. លក់ដុំ (WHOLESALE) -->
+    <div class="bg-white/10 p-3.5 rounded-xl w-full border border-white/20">
+        <p class="text-[10px] font-bold text-white/80 uppercase">លក់ដុំ (WHOLESALE)</p>
+        <p class="font-black text-lg mt-0.5 sensitive-data" data-value="{{ number_format($wholesaleRevenue ?? 0, 2) }}">
+            $ {{ number_format($wholesaleRevenue ?? 0, 2) }}
+        </p>
+    </div>
+</div>
             </div>
 
             <div class="bg-[#15234b]/80 backdrop-blur-md p-6 rounded-3xl border border-[#1C2C4E] shadow-xl relative">
