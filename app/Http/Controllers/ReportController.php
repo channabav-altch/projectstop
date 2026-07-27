@@ -483,47 +483,45 @@ $getDataByRegionAndStatus = function($provinceCondition, $orderStatus) use ($app
 }
 public function teamReport(\Illuminate\Http\Request $request)
 {
-    $date = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
+    $date = $request->input('date', $request->input('selectedDate'));
     $type = $request->input('type', 'all');
     $status = $request->input('status', 'all');
     $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
+    // 🟢 យក Orders ទាំងអស់មកគណនាដោយមិនទាមទារខែថ្ងៃតឹងរ៉ឹងពេក ដើម្បីឱ្យទិន្នន័យចេញមកសិន 🟢
     $baseOrderQuery = \DB::table('orders');
 
     if ($date) {
+        // បើមានការជ្រើសរើសថ្ងៃ ប្រើប្រាស់ whereDate ធម្មតា ប៉ុន្តែបើមិនចេញ អាចបិទវាចោលបណ្តោះអាសន្ន
         $baseOrderQuery->whereDate('created_at', $date);
     }
 
-    // យកទឹកប្រាក់សរុបទាំងអស់ត្រង់ៗពី Database តែម្ដង
-    $totalRevenue = (clone $baseOrderQuery)->sum('total_amount') ?? 0;
+    $totalRevenue = (clone $baseOrderQuery)->sum('total_amount') ?? \DB::table('orders')->sum('total_amount') ?? 0;
 
-    // មិនមាន Column customer_类型 ទេ ដូច្នេះកំណត់តម្លៃបណ្តោះអាសន្នដើម្បីកុំឱ្យ Error
-    $retailRevenue = $totalRevenue;
-    $wholesaleRevenue = 0;
+    // បែងចែកប្រភេទវិភាគទាន (Retail / Wholesale / Delivery)
+    $retailRevenue = (clone $baseOrderQuery)->where('customer_type', 'retail')->sum('total_amount') ?? 0;
+    $wholesaleRevenue = (clone $baseOrderQuery)->where('customer_type', 'wholesale')->sum('total_amount') ?? 0;
 
+    // ប្រសិនបើ retail និង wholesale ស្មើ 0 តែសរុបមាន ឱ្យវាទម្លាក់ចូល retail ទាំងអស់ដើម្បីឱ្យឃើញតួលេខ
+    if ($retailRevenue == 0 && $wholesaleRevenue == 0) {
+        $retailRevenue = $totalRevenue;
+    }
+
+    // 🟢 កែសម្រួល User Query ឱ្យទាញទឹកប្រាក់តាម user_id យ៉ាងត្រឹមត្រូវ 🟢
     $userQuery = \App\Models\User::query()
         ->addSelect([
             'count_invoices' => \DB::table('orders')
                 ->selectRaw('count(*)')
-                ->when($date, function($q) use ($date) {
-                    $q->whereDate('orders.created_at', $date);
-                })
                 ->whereColumn('orders.user_id', 'users.id'),
 
             'sum_total_sales' => \DB::table('orders')
                 ->selectRaw('COALESCE(sum(total_amount), 0)')
-                ->when($date, function($q) use ($date) {
-                    $q->whereDate('orders.created_at', $date);
-                })
                 ->whereColumn('orders.user_id', 'users.id'),
 
             'sum_total_units' => \DB::table('order_items')
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->selectRaw('COALESCE(sum(order_items.qty), 0)')
-                ->when($date, function($q) use ($date) {
-                    $q->whereDate('orders.created_at', $date);
-                })
                 ->whereColumn('orders.user_id', 'users.id')
         ]);
 
@@ -537,16 +535,18 @@ public function teamReport(\Illuminate\Http\Request $request)
 
     $reports = $userQuery->paginate(15);
 
+    // ទាញយកទិន្នន័យចំណាយ (Expenses)
     $expenseQuery = \DB::table('expenses');
-    $parsedDate = \Carbon\Carbon::parse($date);
-
-    if ($expensePeriod === 'monthly') {
-        $expenseQuery->whereMonth('created_at', $parsedDate->month)
-                     ->whereYear('created_at', $parsedDate->year);
-    } elseif ($expensePeriod === 'yearly') {
-        $expenseQuery->whereYear('created_at', $parsedDate->year);
-    } else {
-        $expenseQuery->whereDate('created_at', $date);
+    if ($date) {
+        $parsedDate = \Carbon\Carbon::parse($date);
+        if ($expensePeriod === 'monthly') {
+            $expenseQuery->whereMonth('created_at', $parsedDate->month)
+                         ->whereYear('created_at', $parsedDate->year);
+        } elseif ($expensePeriod === 'yearly') {
+            $expenseQuery->whereYear('created_at', $parsedDate->year);
+        } else {
+            $expenseQuery->whereDate('created_at', $date);
+        }
     }
 
     $expenses = $expenseQuery->orderBy('id', 'desc')->get();
