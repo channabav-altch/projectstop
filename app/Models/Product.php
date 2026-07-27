@@ -9,11 +9,6 @@ class Product extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'product_name',
@@ -35,7 +30,7 @@ class Product extends Model
     ];
 
     /**
-     * Relationship ទៅកាន់ BundleItem model
+     * Relationship ទៅកាន់ BundleItem model ដោយប្រើ product_id
      */
     public function bundleItems()
     {
