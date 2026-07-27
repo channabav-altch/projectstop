@@ -483,32 +483,24 @@ $getDataByRegionAndStatus = function($provinceCondition, $orderStatus) use ($app
 }
 public function teamReport(\Illuminate\Http\Request $request)
 {
-    $date = $request->input('date', $request->input('selectedDate'));
+    // 🟢 បង្ខំសម្អាត Cache លើ Server ដើម្បីឱ្យកូដ និងទិន្នន័យថ្មីដំណើរការភ្លាមៗ 🟢
+    \Illuminate\Support\Facades\Artisan::call('cache:clear');
+    \Illuminate\Support\Facades\Artisan::call('view:clear');
+    \Illuminate\Support\Facades\Artisan::call('route:clear');
+
+    $date = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
     $type = $request->input('type', 'all');
     $status = $request->input('status', 'all');
     $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
-    // 🟢 យក Orders ទាំងអស់មកគណនាដោយមិនទាមទារខែថ្ងៃតឹងរ៉ឹងពេក ដើម្បីឱ្យទិន្នន័យចេញមកសិន 🟢
-    $baseOrderQuery = \DB::table('orders');
+    // 🟢 ទាញយកទឹកប្រាក់សរុបផ្ទាល់ពី Table orders មកបង្ហាញ ១០០% 🟢
+    $totalRevenue = \DB::table('orders')->sum('total_amount') ?? 0;
 
-    if ($date) {
-        // បើមានការជ្រើសរើសថ្ងៃ ប្រើប្រាស់ whereDate ធម្មតា ប៉ុន្តែបើមិនចេញ អាចបិទវាចោលបណ្តោះអាសន្ន
-        $baseOrderQuery->whereDate('created_at', $date);
-    }
+    $retailRevenue = $totalRevenue;
+    $wholesaleRevenue = 0;
 
-    $totalRevenue = (clone $baseOrderQuery)->sum('total_amount') ?? \DB::table('orders')->sum('total_amount') ?? 0;
-
-    // បែងចែកប្រភេទវិភាគទាន (Retail / Wholesale / Delivery)
-    $retailRevenue = (clone $baseOrderQuery)->where('customer_type', 'retail')->sum('total_amount') ?? 0;
-    $wholesaleRevenue = (clone $baseOrderQuery)->where('customer_type', 'wholesale')->sum('total_amount') ?? 0;
-
-    // ប្រសិនបើ retail និង wholesale ស្មើ 0 តែសរុបមាន ឱ្យវាទម្លាក់ចូល retail ទាំងអស់ដើម្បីឱ្យឃើញតួលេខ
-    if ($retailRevenue == 0 && $wholesaleRevenue == 0) {
-        $retailRevenue = $totalRevenue;
-    }
-
-    // 🟢 កែសម្រួល User Query ឱ្យទាញទឹកប្រាក់តាម user_id យ៉ាងត្រឹមត្រូវ 🟢
+    // 🟢 ទាញយកទិន្នន័យ User និងទឹកប្រាក់លក់របស់ពួកគេ 🟢
     $userQuery = \App\Models\User::query()
         ->addSelect([
             'count_invoices' => \DB::table('orders')
@@ -536,20 +528,7 @@ public function teamReport(\Illuminate\Http\Request $request)
     $reports = $userQuery->paginate(15);
 
     // ទាញយកទិន្នន័យចំណាយ (Expenses)
-    $expenseQuery = \DB::table('expenses');
-    if ($date) {
-        $parsedDate = \Carbon\Carbon::parse($date);
-        if ($expensePeriod === 'monthly') {
-            $expenseQuery->whereMonth('created_at', $parsedDate->month)
-                         ->whereYear('created_at', $parsedDate->year);
-        } elseif ($expensePeriod === 'yearly') {
-            $expenseQuery->whereYear('created_at', $parsedDate->year);
-        } else {
-            $expenseQuery->whereDate('created_at', $date);
-        }
-    }
-
-    $expenses = $expenseQuery->orderBy('id', 'desc')->get();
+    $expenses = \DB::table('expenses')->orderBy('id', 'desc')->get();
 
     return view('reports.team', compact(
         'reports',
@@ -566,7 +545,8 @@ public function teamReport(\Illuminate\Http\Request $request)
         'selectedDate'   => $date,
         'retailSales'    => $retailRevenue,
         'wholesaleSales' => $wholesaleRevenue,
-        'teamReports'    => $reports
+        'teamReports'    => $reports,
+        'totalSales'     => $totalRevenue
     ]);
 }
     // ==========================================
