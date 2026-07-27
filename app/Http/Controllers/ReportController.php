@@ -702,7 +702,7 @@ public function teamReport(\Illuminate\Http\Request $request)
     }
 
     // ២. រក្សាទុកការកែប្រែចូល Database (Update)
-    public function updateExpense(\Illuminate\Http\Request $request, $id)
+   public function updateExpense(\Illuminate\Http\Request $request, $id)
 {
     // ១. Validate ទិន្នន័យ
     $request->validate([
@@ -713,7 +713,7 @@ public function teamReport(\Illuminate\Http\Request $request)
     // ២. ស្វែងរកទិន្នន័យចំណាយតាម ID
     $expense = \App\Models\Expense::findOrFail($id);
 
-    // ៣. Update ចូល Database (ដក 'title' ចេញ ដើម្បីកុំឱ្យ Error)
+    // ៣. Update ចូល Database (ដក 'title' ចេញដាច់ខាត)
     $expense->update([
         'description'  => $request->description,
         'amount'       => $request->amount,
