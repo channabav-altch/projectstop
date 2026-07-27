@@ -613,27 +613,24 @@ public function teamReport(\Illuminate\Http\Request $request)
     // មុខងារទាក់ទងនឹង ការចំណាយ (Expense)
     // ==========================================
 
-    // បញ្ចូលចំណាយថ្មី
-    public function storeExpense(Request $request)
-    {
-        // ១. Validate ឲ្យបានត្រឹមត្រូវ
-$request->validate([
-    'description' => 'required|string|max:255',
-    'amount'      => 'required|numeric|min:0',
-]);
+   public function storeExpense(\Illuminate\Http\Request $request)
+{
+    // ១. Validate ទិន្នន័យ
+    $request->validate([
+        'description' => 'required|string|max:255',
+        'amount'      => 'required|numeric|min:0',
+    ]);
 
-// ២. ផ្ទៀងផ្ទាត់និងបញ្ជូនតម្លៃចូល Database
-Expense::create([
-    // ចាប់យកតម្លៃ description មកដាក់បញ្ចូលទាំង title (ការពាររឿង not-null constraint)
-    'title'        => $request->description ?? 'មិនមានចំណងជើង',
-    'description'  => $request->description,
-    'amount'       => $request->amount,
-    'expense_date' => $request->expense_date ?? date('Y-m-d'),
-    'requester_name' => $request->requester_name ?? 'TSM',
-]);
+    // ២. រក្សាទុកក្នុង Database តាម Eloquent Model (គ្មាន title និង requester_name ទេ)
+    \App\Models\Expense::create([
+        'description'  => $request->description,
+        'amount'       => $request->amount,
+        'expense_date' => $request->expense_date ?? date('Y-m-d'),
+    ]);
 
-        return redirect()->back()->with('success', 'បានរក្សាទុកការចំណាយជោគជ័យ!');
-    }
+    // ៣. Redirect ត្រឡប់ទៅវិញ
+    return redirect()->back()->with('success', 'បានរក្សាទុកការចំណាយជោគជ័យ!');
+}
 
     // // កែប្រែចំណាយ
     // public function updateExpense(Request $request, $id)
