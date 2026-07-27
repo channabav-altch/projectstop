@@ -483,18 +483,55 @@ $getDataByRegionAndStatus = function($provinceCondition, $orderStatus) use ($app
 }
 public function teamReport(\Illuminate\Http\Request $request)
 {
-    // 🔍 ពិនិត្យមើលទិន្នន័យពិតក្នុង Database ផ្ទាល់ (Debug)
-    $debugInfo = [
-        'database_connection' => \DB::connection()->getDriverName(),
-        'database_name' => \DB::connection()->getDatabaseName(),
-        'orders_count' => \DB::table('orders')->count(),
-        'orders_total_sum' => \DB::table('orders')->sum('total_amount'),
-        'all_orders' => \DB::table('orders')->get(),
-        'users_count' => \DB::table('users')->count(),
-    ];
+    $date = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
+    $type = $request->input('type', 'all');
+    $search = $request->input('search');
+    $expensePeriod = $request->input('expense_period', 'daily');
 
-    // បង្ហាញទិន្នន័យនេះនៅលើ màn hình ភ្លាមៗដើម្បីឱ្យយើងដឹងមូលហេតុ
-    dd($debugInfo);
+    // ១. ទាញយកទឹកប្រាក់សរុបទាំងអស់ពី table orders ដោយផ្ទាល់
+    $totalRevenue = \DB::table('orders')->sum('total_amount') ?? 0;
+
+    $retailRevenue = $totalRevenue;
+    $wholesaleRevenue = 0;
+
+    // ២. ទាញយកបញ្ជី Users និងគណនាតម្លៃលក់របស់ពួកគេផ្ទាល់ពី orders តាមរយៈ DB::table
+    $userQuery = \DB::table('users')
+        ->select('users.id', 'users.name', 'users.email', 'users.role',
+            \DB::raw('(SELECT COUNT(*) FROM orders WHERE orders.user_id = users.id) as count_invoices'),
+            \DB::raw('(SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE orders.user_id = users.id) as sum_total_sales'),
+            \DB::raw('(SELECT COALESCE(SUM(order_items.qty), 0) FROM order_items JOIN orders ON order_items.order_id = orders.id WHERE orders.user_id = users.id) as sum_total_units')
+        );
+
+    if ($search) {
+        $userQuery->where('users.name', 'LIKE', "%{$search}%");
+    }
+
+    if ($type && $type !== 'all') {
+        $userQuery->where('users.role', $type);
+    }
+
+    $reports = $userQuery->paginate(15);
+
+    // ៣. ទាញយកទិន្នន័យចំណាយ (Expenses)
+    $expenses = \DB::table('expenses')->orderBy('id', 'desc')->get();
+
+    return view('reports.team', compact(
+        'reports',
+        'date',
+        'type',
+        'search',
+        'totalRevenue',
+        'retailRevenue',
+        'wholesaleRevenue',
+        'expenses',
+        'expensePeriod'
+    ))->with([
+        'selectedDate'   => $date,
+        'retailSales'    => $retailRevenue,
+        'wholesaleSales' => $wholesaleRevenue,
+        'teamReports'    => $reports,
+        'totalSales'     => $totalRevenue
+    ]);
 }
     // ==========================================
     // មុខងារទាក់ទងនឹង ការចំណាយ (Expense)
