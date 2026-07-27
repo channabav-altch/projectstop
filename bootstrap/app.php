@@ -11,10 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // បន្ថែមបន្ទាត់នេះដើម្បីដោះស្រាយបញ្ហា Not Secure (HTTPS) លើ Railway
+        $middleware->trustProxies(at: '*');
+
         $middleware->validateCsrfTokens(except: [
-        'products/*', // <--- ថែមជួរនេះ ប្រាប់ Laravel ថា "កុំសួររក Token សម្រាប់ខ្សែ products"
-    ]);
-        //
+            'products/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
