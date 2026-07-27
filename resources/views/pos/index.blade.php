@@ -151,7 +151,7 @@
                             @endif
 
                             <div class="card-img-wrapper relative w-full h-32 flex items-center justify-center mb-3 bg-slate-50 rounded-xl overflow-hidden">
-                                <img src="{{ asset($item->image ?? 'https://via.placeholder.com/150') }}" class="h-full w-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-500">
+                                <img src="{{ $item->image ? asset('storage/' . $item->image) : 'https://via.placeholder.com/150' }}" class="h-full w-full object-cover">
                             </div>
 
                             <div class="relative z-10 flex-1 flex flex-col justify-between">
