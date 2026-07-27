@@ -9,28 +9,36 @@ class Product extends Model
 {
     use HasFactory;
 
-    // ត្រូវតែមានទាំង product_code និង sku នៅទីនេះ
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
-        'product_name', // ត្រូវប្រាកដថាមានពាក្យនេះ
+        'name',
+        'product_name',
+        'code',
         'product_code',
         'sku',
-        'image',        // ត្រូវប្រាកដថាមានពាក្យនេះ
-        'category',
-        'cost_price',
+        'barcode',
+        'price',
         'sale_price',
+        'cost',
+        'cost_price',
         'qty',
         'unit',
         'status',
         'qty_cases',
-        'qty_pieces'
+        'qty_pieces',
+        'image',
+        'category',
     ];
 
-    // ដាក់ក្នុងឯកសារ app/Models/Product.php
+    /**
+     * Relationship ទៅកាន់ BundleItem model
+     */
     public function bundleItems()
     {
-        // ឧបមាថាបងមាន Table "bundle_items" សម្រាប់ចងទំនិញ
-        return $this->hasMany(BundleItem::class, 'combo_product_id');
-        return $this->hasMany(\App\Models\BundleItem::class, 'product_id');
         return $this->hasMany(BundleItem::class, 'product_id');
     }
 }
