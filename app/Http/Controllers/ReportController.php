@@ -483,29 +483,20 @@ $getDataByRegionAndStatus = function($provinceCondition, $orderStatus) use ($app
 }
 public function teamReport(\Illuminate\Http\Request $request)
 {
-    // 🟢 ១. ចាប់យកតម្លៃដែលបញ្ជូនមកពី URL / Form ( support ទាំង date និង selectedDate )
-    $date          = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
-    $type          = $request->input('type', 'all');
-    $status        = $request->input('status', 'all');
-    $search        = $request->input('search');
+    $date = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
+    $type = $request->input('type', 'all');
+    $status = $request->input('status', 'all');
+    $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
-    // បញ្ជី status ដែលចាត់ទុកថាជាការលក់ជោគជ័យ
-    $paidStatuses = ['PAID', 'paid', 'បង់រួច', 'completed', 'Completed', 'SUCCESS', 'success'];
+    $baseOrderQuery = \DB::table('orders');
 
-    // 🟢 ២. បង្កើត Base Order Query សម្រាប់គណនា Card ផ្នែកខាងលើ 🟢
-    $baseOrderQuery = \DB::table('orders')
-        ->whereDate('created_at', $date);
-
-    // បើ status មិនមែន 'all' ទេ ទើប Filter តាម status
-    if ($status !== 'all') {
-        $baseOrderQuery->whereIn('status', $paidStatuses);
+    if ($date) {
+        $baseOrderQuery->whereDate('created_at', $date);
     }
 
-    // ចំណូលសរុប (Total Revenue)
     $totalRevenue = (clone $baseOrderQuery)->sum('total_amount') ?? 0;
 
-    // លក់រាយ (Retail Revenue)
     $retailRevenue = (clone $baseOrderQuery)
         ->where(function($q) {
             $q->where('customer_type', 'walkin')
@@ -514,70 +505,48 @@ public function teamReport(\Illuminate\Http\Request $request)
         })
         ->sum('total_amount') ?? 0;
 
-    // លក់ដុំ (Wholesale Revenue)
     $wholesaleRevenue = (clone $baseOrderQuery)
         ->where('customer_type', 'wholesale')
         ->sum('total_amount') ?? 0;
 
-    // 🟢 ៣. Query ទិន្នន័យបុគ្គលិក / អ្នកលក់ (ឆែកគ្រប់ Column: user_id, created_by, seller_id) 🟢
+    // 🟢 ប្រើប្រាស់ត្រឹម user_id ព្រោះក្នុង DB របស់បងមានតែ Column នេះ 🟢
     $userQuery = \App\Models\User::query()
         ->addSelect([
-            // រាប់ចំនួនវិក្កយបត្រ
             'count_invoices' => \DB::table('orders')
                 ->selectRaw('count(*)')
-                ->whereDate('orders.created_at', $date)
-                ->when($status !== 'all', function($q) use ($paidStatuses) {
-                    $q->whereIn('orders.status', $paidStatuses);
+                ->when($date, function($q) use ($date) {
+                    $q->whereDate('orders.created_at', $date);
                 })
-                ->where(function($q) {
-                    $q->whereColumn('orders.user_id', 'users.id')
-                      ->orWhereColumn('orders.created_by', 'users.id')
-                      ->orWhereColumn('orders.seller_id', 'users.id');
-                }),
+                ->whereColumn('orders.user_id', 'users.id'),
 
-            // បូកទឹកប្រាក់លក់សរុប ($)
             'sum_total_sales' => \DB::table('orders')
                 ->selectRaw('COALESCE(sum(total_amount), 0)')
-                ->whereDate('orders.created_at', $date)
-                ->when($status !== 'all', function($q) use ($paidStatuses) {
-                    $q->whereIn('orders.status', $paidStatuses);
+                ->when($date, function($q) use ($date) {
+                    $q->whereDate('orders.created_at', $date);
                 })
-                ->where(function($q) {
-                    $q->whereColumn('orders.user_id', 'users.id')
-                      ->orWhereColumn('orders.created_by', 'users.id')
-                      ->orWhereColumn('orders.seller_id', 'users.id');
-                }),
+                ->whereColumn('orders.user_id', 'users.id'),
 
-            // បូកចំនួនទំនិញសរុប (UNITS)
             'sum_total_units' => \DB::table('order_items')
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->selectRaw('COALESCE(sum(order_items.qty), 0)')
-                ->whereDate('orders.created_at', $date)
-                ->when($status !== 'all', function($q) use ($paidStatuses) {
-                    $q->whereIn('orders.status', $paidStatuses);
+                ->when($date, function($q) use ($date) {
+                    $q->whereDate('orders.created_at', $date);
                 })
-                ->where(function($q) {
-                    $q->whereColumn('orders.user_id', 'users.id')
-                      ->orWhereColumn('orders.created_by', 'users.id')
-                      ->orWhereColumn('orders.seller_id', 'users.id');
-                })
+                ->whereColumn('orders.user_id', 'users.id')
         ]);
 
-    // តម្រងស្វែងរកតាមឈ្មោះ
     if ($search) {
         $userQuery->where('name', 'LIKE', "%{$search}%");
     }
 
-    // តម្រងស្វែងរកតាម Role បុគ្គលិក
     if ($type && $type !== 'all') {
         $userQuery->where('role', $type);
     }
 
     $reports = $userQuery->paginate(15);
 
-    // 🟢 ៤. ទាញទិន្នន័យចំណាយ (Expenses) ដើរតាម ថ្ងៃ / ខែ / ឆ្នាំ 🟢
     $expenseQuery = \DB::table('expenses');
-    $parsedDate    = \Carbon\Carbon::parse($date);
+    $parsedDate = \Carbon\Carbon::parse($date);
 
     if ($expensePeriod === 'monthly') {
         $expenseQuery->whereMonth('created_at', $parsedDate->month)
@@ -590,7 +559,6 @@ public function teamReport(\Illuminate\Http\Request $request)
 
     $expenses = $expenseQuery->orderBy('id', 'desc')->get();
 
-    // 🟢 ៥. បញ្ជូនទិន្នន័យទាំងអស់ទៅកាន់ View (ការពារ និង Support គ្រប់ឈ្មោះ Variable ក្នុង Blade) 🟢
     return view('reports.team', compact(
         'reports',
         'date',
