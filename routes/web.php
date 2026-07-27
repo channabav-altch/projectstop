@@ -121,7 +121,7 @@ Route::delete('/pos/delete/{id}', [\App\Http\Controllers\PosController::class, '
 // Route::put('/pos/update/{id}', [App\Http\Controllers\PosController::class, 'update'])->name('pos.update');
 Route::post('/pos/cancel/{id}', [\App\Http\Controllers\PosController::class, 'cancelOrder']);
 // 🔴 កូដដែលត្រឹមត្រូវ ត្រូវតែមាន ->name('pos.checkout') នៅខាងចុង 🔴
-Route::post('/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
+Route::get('/checkout-page', [PosController::class, 'index'])->name('checkout.page');
 
 Route::get('/admin-report', [App\Http\Controllers\ReportController::class, 'adminReport'])->name('admin.report');
 
