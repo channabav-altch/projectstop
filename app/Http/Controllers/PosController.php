@@ -113,7 +113,7 @@ class PosController extends Controller
                     'product_id' => $item['id'],
                     'qty'        => $sell_qty,
                     'unit_price' => $item['price'],
-                    'total'      => $sell_qty * $item['price'],
+                    // 'total'      => $sell_qty * $item['price'],
                 ]);
             }
         }
