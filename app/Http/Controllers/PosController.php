@@ -341,64 +341,61 @@ public function checkout(Request $request)
     }
 
     public function cancelOrder($id)
-    {
+{
+    try {
+        // ចាប់ផ្តើម Transaction (បើ Error ពាក់កណ្តាលទី វានឹងមិនកាត់ស្តុកញ៉េញ៉ៃទេ)
+        \Illuminate\Support\Facades\DB::beginTransaction();
 
-        try {
-            // ចាប់ផ្តើម Transaction (បើ Error ពាក់កណ្តាលទី វានឹងមិនកាត់ស្តុកញ៉េញ៉ៃទេ)
-            \Illuminate\Support\Facades\DB::beginTransaction();
+        // ១. រកមើលវិក្កយបត្រនោះ
+        $order = \App\Models\Order::findOrFail($id);
 
-            // ១. រកមើលវិក្កយបត្រនោះ
-            $order = \App\Models\Order::findOrFail($id);
+        // ការពារកុំឲ្យបូកស្តុកផ្ទួនគ្នា (ប្រើ strtoupper ដើម្បីការពារខុសអក្សរតូច/ធំ)
+        if (strtoupper($order->status) === 'CANCELED') {
+            return redirect()->back()->with('error', 'វិក្កយបត្រនេះត្រូវបានបោះបង់រួចហើយ!');
+        }
 
-            // ការពារកុំឲ្យបូកស្តុកផ្ទួនគ្នា (ប្រើ strtolower ដើម្បីការពារខុសអក្សរតូច/ធំ)
-            if (strtolower($order->status) === 'CANCELED') {
-                return redirect()->back()->with('error', 'វិក្កយបត្រនេះត្រូវបានបោះបង់រួចហើយ!');
-            }
+        // ២. ទាញទំនិញដែលបានលក់ក្នុងវិក្កយបត្រនេះ ដើម្បីយកទៅបូកស្តុកវិញ
+        $orderItems = \App\Models\OrderItem::where('order_id', $id)->get();
 
-            // ២. ទាញទំនិញដែលបានលក់ក្នុងវិក្កយបត្រនេះ ដើម្បីយកទៅបូកស្តុកវិញ
-            $orderItems = \App\Models\OrderItem::where('order_id', $id)->get();
+        foreach ($orderItems as $item) {
+            $product = \App\Models\Product::find($item->product_id);
 
-            foreach ($orderItems as $item) {
-                $product = \App\Models\Product::find($item->product_id);
-
-                if ($product) {
-                    // ឆែកមើលតើជាទំនិញ "ឈុត" ឬទេ?
-                    if ($product->category === 'ឈុត (Bundle)' || $product->category === 'ឈុត') {
-                        $subItems = $product->bundleItems;
-                        if ($subItems) {
-                            foreach ($subItems as $sub) {
-                                $childProduct = \App\Models\Product::find($sub->product_id);
-                                if ($childProduct) {
-                                    // រូបមន្ត៖ ចំនួនកូន x ចំនួនឈុតដែលបានលក់
-                                    $qtyToReturn = $sub->quantity * $item->qty;
-                                    // ⚠️ ចំណាំទី១៖ បើ Column ស្តុកក្នុង DB បងឈ្មោះ 'stock' ត្រូវដូរពាក្យ 'qty' ទៅជា 'stock'
-                                    $childProduct->increment('qty', $qtyToReturn);
-                                }
+            if ($product) {
+                // ឆែកមើលតើជាទំនិញ "ឈុត" ឬទេ?
+                if ($product->category === 'ឈុត (Bundle)' || $product->category === 'ឈុត') {
+                    $subItems = $product->bundleItems;
+                    if ($subItems) {
+                        foreach ($subItems as $sub) {
+                            $childProduct = \App\Models\Product::find($sub->product_id);
+                            if ($childProduct) {
+                                // រូបមន្ត៖ ចំនួនកូន x ចំនួនឈុតដែលបានលក់
+                                $qtyToReturn = $sub->quantity * $item->qty;
+                                $childProduct->increment('qty', $qtyToReturn);
                             }
                         }
-                    } else {
-                        // បើមិនមែនឈុតទេ គឺបូកស្តុកទំនិញរាយធម្មតា
-                        // ⚠️ ចំណាំទី២៖ បើ Column ស្តុកក្នុង DB បងឈ្មោះ 'stock' ត្រូវដូរពាក្យ 'qty' ទៅជា 'stock'
-                        $product->increment('qty', $item->qty);
                     }
+                } else {
+                    // បើមិនមែនឈុតទេ គឺបូកស្តុកទំនិញរាយធម្មតា
+                    $product->increment('qty', $item->qty);
                 }
             }
-
-            // ៣. ប្តូរស្ថានភាពវិក្កយបត្រទៅជា canceled (សរសេរអក្សរតូចទើបត្រូវជាមួយ paid/pending)
-            $order->status = 'CANCELED';
-            $order->save();
-
-            // បញ្ជាក់ថាជោគជ័យ
-            \Illuminate\Support\Facades\DB::commit();
-
-            return redirect()->back()->with('success', 'វិក្កយបត្រត្រូវបានបោះបង់ និងស្តុកត្រូវបានបូកបញ្ចូលវិញជោគជ័យ!');
-
-        } catch (\Exception $e) {
-            // បើមាន Error ទាញទិន្នន័យត្រឡប់ក្រោយវិញ (Rollback)
-            \Illuminate\Support\Facades\DB::rollBack();
-            return redirect()->back()->with('error', 'មានបញ្ហាពេលបោះបង់វិក្កយបត្រ៖ ' . $e->getMessage());
         }
+
+        // ៣. ប្តូរស្ថានភាពវិក្កយបត្រទៅជា CANCELED
+        $order->status = 'CANCELED';
+        $order->save();
+
+        // បញ្ជាក់ថាជោគជ័យ
+        \Illuminate\Support\Facades\DB::commit();
+
+        return redirect()->back()->with('success', 'វិក្កយបត្រត្រូវបានបោះបង់ និងស្តុកត្រូវបានបូកបញ្ចូលវិញជោគជ័យ!');
+
+    } catch (\Exception $e) {
+        // បើមាន Error ទាញទិន្នន័យត្រឡប់ក្រោយវិញ (Rollback)
+        \Illuminate\Support\Facades\DB::rollBack();
+        return redirect()->back()->with('error', 'មានបញ្ហាពេលបោះបង់វិក្កយបត្រ៖ ' . $e->getMessage());
     }
+}
 
     public function printSales(Request $request)
     {
