@@ -173,69 +173,75 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#1C2C4E]/50">
-                        @forelse($reports ?? [] as $key => $manager)
-                        <tr class="border-b border-[#1C2C4E]/80 hover:bg-white/[0.02] transition-all duration-300 group">
+    @forelse($reports ?? [] as $key => $manager)
+        <tr class="border-b border-[#1C2C4E]/80 hover:bg-white/[0.02] transition-all duration-300 group">
 
-                            <td class="px-6 py-4 text-sm font-bold text-slate-500 group-hover:text-slate-300 transition-colors">
-                                #{{ $key + 1 }}
-                            </td>
+            <!-- ១. លំដាប់ (#) -->
+            <td class="px-6 py-4 text-sm font-bold text-slate-500 group-hover:text-slate-300 transition-colors">
+                #{{ $loop->iteration }}
+            </td>
 
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#5642F5] to-purple-500 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-[#5642F5]/30">
-                                        {{ mb_substr($manager->name, 0, 1) }}
-                                    </div>
-                                    <span class="text-sm font-bold text-slate-200 group-hover:text-white transition-colors">
-                                        {{ $manager->name }}
-                                    </span>
-                                </div>
-                            </td>
+            <!-- ២. រូបតំណាង (Avatar) + ឈ្មោះអ្នកលក់ -->
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#5642F5] to-purple-500 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-[#5642F5]/30">
+                        {{ mb_substr($manager->name ?? 'U', 0, 1) }}
+                    </div>
+                    <span class="text-sm font-bold text-slate-200 group-hover:text-white transition-colors">
+                        {{ $manager->name ?? 'មិនស្គាល់' }}
+                    </span>
+                </div>
+            </td>
 
-                            <td class="px-6 py-4 text-center text-sm">
-                                @if(strtolower($manager->role) == 'wholesale')
-                                    <span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm shadow-amber-500/10">
-                                        បោះដុំ
-                                    </span>
-                                @else
-                                    <span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm shadow-indigo-500/10">
-                                        លក់រាយ
-                                    </span>
-                                @endif
-                            </td>
+            <!-- ៣. ប្រភេទ/Role (បោះដុំ ឬ លក់រាយ) -->
+            <td class="px-6 py-4 text-center text-sm">
+                @if(strtolower($manager->role ?? '') == 'wholesale')
+                    <span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm shadow-amber-500/10">
+                        បោះដុំ
+                    </span>
+                @else
+                    <span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm shadow-indigo-500/10">
+                        លក់រាយ
+                    </span>
+                @endif
+            </td>
 
-                            <td class="px-6 py-4 text-center text-sm font-bold text-slate-300">
-                                <!-- 🟢 ដូរឈ្មោះមកជា count_invoices តាម Controller -->
-                                <span class="text-sky-400 text-base">{{ number_format($manager->count_invoices ?? 0) }}</span>
-                                <span class="text-slate-500 text-xs ml-1">វិក្កយបត្រ</span>
-                            </td>
+            <!-- ៤. ចំនួនវិក្កយបត្រ (count_invoices) -->
+            <td class="px-6 py-4 text-center text-sm font-bold text-slate-300">
+                <span class="text-sky-400 text-base">{{ number_format($manager->count_invoices ?? 0) }}</span>
+                <span class="text-slate-500 text-xs ml-1">វិក្កយបត្រ</span>
+            </td>
 
-                            <td class="px-6 py-4 text-center text-sm font-bold text-slate-300">
-                                <!-- 🟢 ដូរឈ្មោះមកជា sum_total_units តាម Controller -->
-                                <span class="text-orange-400 text-base">{{ number_format($manager->sum_total_units ?? 0) }}</span>
-                                <span class="text-slate-500 text-xs ml-1">ឯកតា</span>
-                            </td>
+            <!-- ៥. ចំនួនទំនិញ (sum_total_units) -->
+            <td class="px-6 py-4 text-center text-sm font-bold text-slate-300">
+                <span class="text-orange-400 text-base">{{ number_format($manager->sum_total_units ?? 0) }}</span>
+                <span class="text-slate-500 text-xs ml-1">ឯកតា</span>
+            </td>
 
-                            <td class="px-6 py-4 text-center text-sm font-bold text-slate-300">
-                                <span class="text-slate-300 text-base">0</span>
-                                <span class="text-slate-500 text-xs ml-1">នាក់</span>
-                            </td>
+            <!-- ៦. ចំនួនអតិថិជន -->
+            <td class="px-6 py-4 text-center text-sm font-bold text-slate-300">
+                <span class="text-slate-300 text-base">0</span>
+                <span class="text-slate-500 text-xs ml-1">នាក់</span>
+            </td>
 
-                            <td class="px-6 py-4 text-right">
-                                <!-- 🟢 ដូរឈ្មោះមកជា sum_total_sales តាម Controller -->
-                                <span class="inline-block text-emerald-400 font-black text-sm bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 shadow-sm shadow-emerald-500/10 sensitive-data" data-value="{{ number_format($manager->sum_total_sales ?? 0, 2) }} $">
-                                    {{ number_format($manager->sum_total_sales ?? 0, 2) }} $
-                                </span>
-                            </td>
+            <!-- ៧. ទឹកប្រាក់លក់សរុប (sum_total_sales) -->
+            <td class="px-6 py-4 text-right">
+                <span class="inline-block text-emerald-400 font-black text-sm bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 shadow-sm shadow-emerald-500/10 sensitive-data"
+                      data-value="$ {{ number_format($manager->sum_total_sales ?? 0, 2) }}">
+                    $ {{ number_format($manager->sum_total_sales ?? 0, 2) }}
+                </span>
+            </td>
 
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="7" class="px-6 py-16 text-center text-slate-500 text-sm font-bold">
-                                📂 មិនទាន់មានទិន្នន័យសម្រាប់ថ្ងៃនេះទេ!
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
+        </tr>
+    @empty
+        <!-- បង្ហាញពេលគ្មានទិន្នន័យ -->
+        <tr>
+            <td colspan="7" class="px-6 py-16 text-center text-slate-500 text-sm font-bold">
+                📂 មិនទាន់មានទិន្នន័យលក់សម្រាប់ថ្ងៃនេះទេ!
+            </td>
+        </tr>
+    @endforelse
+</tbody>
                 </table>
             </div>
         </div>
