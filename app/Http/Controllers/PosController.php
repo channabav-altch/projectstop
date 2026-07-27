@@ -21,7 +21,7 @@ class PosController extends Controller
     public function index()
     {
         // ទាញទំនិញទាំងអស់ពី PostgreSQL មកបង្ហាញ
-        $products = Product::with('bundleItems')->get();
+        $products = Product::all();
 
         return view('pos.index', compact('products'));
     }
