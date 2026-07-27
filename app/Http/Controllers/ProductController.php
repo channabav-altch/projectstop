@@ -71,7 +71,7 @@ class ProductController extends Controller
             foreach ($items as $item) {
                 if(isset($item['product_id'])) {
                     \DB::table('bundle_items')->insert([
-                        'combo_product_id'  => $product->id,
+                        'product_id' => $product->id,
                         'product_bundle_id' => $product->id,
                         'product_id'        => $item['product_id'],
                         'quantity'          => $item['qty'] ?? 1,

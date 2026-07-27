@@ -85,7 +85,7 @@ class PosController extends Controller
                     if ($product) {
                         // ទាញកូនចេញពី Database
                         $subItems = \DB::table('bundle_items')
-                                       ->where('combo_product_id', $product->id)
+                                       ->where('product_id', $product->id)
                                        ->orWhere('product_bundle_id', $product->id)
                                        ->get();
 

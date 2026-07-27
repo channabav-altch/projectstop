@@ -190,7 +190,7 @@
                 @php
                     // កាយរកកូនដោយប្រើ Column របស់បង
                     $subProducts = \DB::table('bundle_items')
-                                     ->where('combo_product_id', $item->id)
+                                     ->where('product_id', $item->id)
                                      ->orWhere('product_bundle_id', $item->id)
                                      ->get();
                 @endphp
