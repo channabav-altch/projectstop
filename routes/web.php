@@ -98,7 +98,7 @@ Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
 Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
 
 // 🔴 Route ថ្មីសម្រាប់ទទួលទិន្នន័យ និង Save ចូល Database (POST)
-Route::post('/pos/checkout', [App\Http\Controllers\PosController::class, 'store'])->name('pos.store');
+Route::post('/pos/checkout', [App\Http\Controllers\PosController::class, 'store'])->name('pos.checkout');
 
 // សម្រាប់បង្ហាញផ្ទាំងបញ្ជីឈ្មោះអតិថិជន
 Route::get('/customers', [App\Http\Controllers\CustomerController::class, 'index'])->name('customers.index');
