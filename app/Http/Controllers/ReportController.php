@@ -485,48 +485,40 @@ public function teamReport(\Illuminate\Http\Request $request)
 {
     $date = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
     $type = $request->input('type', 'all');
-    $status = $request->input('status', 'all');
     $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
-    // យកទឹកប្រាក់សរុបពី orders ផ្ទាល់
+    // ១. ទាញយកទឹកប្រាក់សរុបទាំងអស់ពី table orders ដោយផ្ទាល់
     $totalRevenue = \DB::table('orders')->sum('total_amount') ?? 0;
 
     $retailRevenue = $totalRevenue;
     $wholesaleRevenue = 0;
 
-    $userQuery = \App\Models\User::query()
-        ->addSelect([
-            'count_invoices' => \DB::table('orders')
-                ->selectRaw('count(*)')
-                ->whereColumn('orders.user_id', 'users.id'),
-
-            'sum_total_sales' => \DB::table('orders')
-                ->selectRaw('COALESCE(sum(total_amount), 0)')
-                ->whereColumn('orders.user_id', 'users.id'),
-
-            'sum_total_units' => \DB::table('order_items')
-                ->join('orders', 'order_items.order_id', '=', 'orders.id')
-                ->selectRaw('COALESCE(sum(order_items.qty), 0)')
-                ->whereColumn('orders.user_id', 'users.id')
-        ]);
+    // ២. ទាញយកបញ្ជី Users និងគណនាតម្លៃលក់របស់ពួកគេផ្ទាល់ពី orders តាមរយៈ DB::table
+    $userQuery = \DB::table('users')
+        ->select('users.id', 'users.name', 'users.email', 'users.role',
+            \DB::raw('(SELECT COUNT(*) FROM orders WHERE orders.user_id = users.id) as count_invoices'),
+            \DB::raw('(SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE orders.user_id = users.id) as sum_total_sales'),
+            \DB::raw('(SELECT COALESCE(SUM(order_items.qty), 0) FROM order_items JOIN orders ON order_items.order_id = orders.id WHERE orders.user_id = users.id) as sum_total_units')
+        );
 
     if ($search) {
-        $userQuery->where('name', 'LIKE', "%{$search}%");
+        $userQuery->where('users.name', 'LIKE', "%{$search}%");
     }
 
     if ($type && $type !== 'all') {
-        $userQuery->where('role', $type);
+        $userQuery->where('users.role', $type);
     }
 
     $reports = $userQuery->paginate(15);
+
+    // ៣. ទាញយកទិន្នន័យចំណាយ (Expenses)
     $expenses = \DB::table('expenses')->orderBy('id', 'desc')->get();
 
     return view('reports.team', compact(
         'reports',
         'date',
         'type',
-        'status',
         'search',
         'totalRevenue',
         'retailRevenue',
