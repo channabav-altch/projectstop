@@ -30,109 +30,100 @@ class PosController extends Controller
     // ២. មុខងារសម្រាប់ទទួលទិន្នន័យទូទាត់ប្រាក់ និង Save & កាត់ស្តុក (POST)
     // ========================================================
  public function store(Request $request)
-    {
-        // ១. Validate ទិន្នន័យពី POS Form (លុប unique:orders,invoice_no ចេញហើយ)
-        $validated = $request->validate([
-            'invoice_no'     => 'required|string',
-            'total_amount'   => 'required|numeric',
-            'customer_type'  => 'nullable|string',
-            'customer_name'  => 'nullable|string',
-            'phone'          => 'nullable|string',
-            'province'       => 'nullable|string',
-            'address_detail' => 'nullable|string',
-            'delivery_method'=> 'nullable|string',
-            'delivery_fee'   => 'nullable|numeric',
-            'note'           => 'nullable|string',
-            'status'         => 'required|string',
-            'payment_method' => 'nullable|string',
-        ]);
+{
+    // ១. Validate ទិន្នន័យពី POS Form
+    $validated = $request->validate([
+        'invoice_no'     => 'required|string',
+        'total_amount'   => 'required|numeric',
+        'customer_type'  => 'nullable|string',
+        'customer_name'  => 'nullable|string',
+        'phone'          => 'nullable|string',
+        'province'       => 'nullable|string',
+        'address_detail' => 'nullable|string',
+        'delivery_method'=> 'nullable|string',
+        'delivery_fee'   => 'nullable|numeric',
+        'note'           => 'nullable|string',
+        'status'         => 'required|string',
+        'payment_method' => 'nullable|string',
+    ]);
 
-        try {
-            // 🟢 បន្ថែមកូដនេះ ដើម្បីការពារពេលវិក្កយបត្រជាន់គ្នា ឲ្យវាថែមលេខថ្មីអូតូ 🟢
-            $invNo = $validated['invoice_no'];
-            if (\App\Models\Order::where('invoice_no', $invNo)->exists()) {
-                $invNo = $invNo . '-' . rand(100, 999); // ថែមលេខកន្ទុយ ៣ខ្ទង់
-            }
-
-            // ២. បញ្ចូលទិន្នន័យទៅក្នុងតារាង orders
-            $order = new \App\Models\Order();
-            $order->user_id          = auth()->id() ?? 1;
-            $order->invoice_no       = $invNo; // <--- ប្រើអថេរ $invNo ដែលការពាររួច
-            $order->total_amount     = $validated['total_amount'];
-            $order->customer_type    = $validated['customer_type'] ?? 'walkin';
-            $order->customer_name    = $validated['customer_name'] ?? 'អតិថិជនទិញផ្ទាល់';
-            $order->phone            = $validated['phone'] ?? null;
-            $order->province         = $validated['province'] ?? null;
-            $order->address_detail   = $validated['address_detail'] ?? null;
-            $order->delivery_method  = $validated['delivery_method'] ?? 'VET';
-            $order->delivery_fee     = $validated['delivery_fee'] ?? 0;
-            $order->note             = $validated['note'] ?? null;
-            $order->status           = $validated['status'];
-            $order->payment_method   = $validated['payment_method'] ?? 'សាច់ប្រាក់';
-            $order->save();
-
-            // ========================================================
-            // 🔴 ៣. ដំណើរការកាត់ស្តុកទំនិញ (ដកស្តុកតាមចំនួនកូនពិតប្រាកដ) 🔴
-            // ========================================================
-            $cartItems = json_decode($request->cart_data, true);
-
-            if ($cartItems && is_array($cartItems)) {
-                foreach ($cartItems as $item) {
-
-                    $product = \App\Models\Product::find($item['id']);
-                    $sell_qty = $item['qty']; // ចំនួនឈុតដែលភ្ញៀវទិញ
-
-                    if ($product) {
-                        // ទាញកូនចេញពី Database
-                        $subItems = \DB::table('bundle_items')
-                                       ->where('product_id', $product->id)
-                                       ->orWhere('product_bundle_id', $product->id)
-                                       ->get();
-
-                        // (លុបកូដ dd ចេញពីទីនេះរួចរាល់)
-
-                        if ($subItems->count() > 0) {
-                            // 🟢 បើវាជា "ឈុត" => ចាប់ផ្តើមកាត់ស្តុកកូន 🟢
-                            foreach ($subItems as $sub) {
-                                $childId = $sub->product_id ?? $sub->item_id;
-                                $childProduct = \App\Models\Product::find($childId);
-
-                                if ($childProduct) {
-                                    // រូបមន្តមន្តអាគម៖ ទាញចំនួនមិនឲ្យខុស Column
-                                    $bundle_item_qty = $sub->qty ?? $sub->quantity ?? 1;
-
-                                    // គណនា៖ (ចំនួនកូនក្នុងឈុត x ចំនួនឈុតដែលទិញ)
-                                    $qtyToDeduct = $bundle_item_qty * $sell_qty;
-
-                                    // កាត់ស្តុកកូនចេញពី Database
-                                    $childProduct->decrement('qty', $qtyToDeduct);
-                                }
-                            }
-                        } else {
-                            // 🔴 បើវាជាទំនិញរាយធម្មតា => កាត់ស្តុកធម្មតា 🔴
-                            $product->decrement('qty', $sell_qty);
-                        }
-                    }
-
-                    // ៤. បង្កើតទិន្នន័យលម្អិតចូលតារាង order_items
-                    \App\Models\OrderItem::create([
-                        'order_id'   => $order->id,
-                        'product_id' => $item['id'],
-                        'qty'        => $sell_qty,
-                        'unit_price' => $item['price'],
-                        'total'      => $sell_qty * $item['price'],
-                    ]);
-
-                }
-            }
-            // ========================================================
-
-            return redirect()->back()->with('success', 'ទូទាត់ប្រាក់ និងកាត់ស្តុកបានជោគជ័យ ១០០%! 🎉');
-
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'បរាជ័យ! មានបញ្ហាក្នុងការទូទាត់៖ ' . $e->getMessage());
+    try {
+        // ការពារពេលវិក្កយបត្រជាន់គ្នា ឱ្យវាថែមលេខកន្ទុយអូតូ
+        $invNo = $validated['invoice_no'];
+        if (\App\Models\Order::where('invoice_no', $invNo)->exists()) {
+            $invNo = $invNo . '-' . rand(100, 999);
         }
+
+        // ២. បញ្ចូលទិន្នន័យទៅក្នុងតារាង orders
+        $order = new \App\Models\Order();
+        $order->user_id         = auth()->id() ?? 1;
+        $order->invoice_no      = $invNo;
+        $order->total_amount    = $validated['total_amount'];
+        $order->customer_type   = $validated['customer_type'] ?? 'walkin';
+        $order->customer_name   = $validated['customer_name'] ?? 'អតិថិជនទិញផ្ទាល់';
+        $order->phone           = $validated['phone'] ?? null;
+        $order->province        = $validated['province'] ?? null;
+        $order->address_detail  = $validated['address_detail'] ?? null;
+        $order->delivery_method = $validated['delivery_method'] ?? 'VET';
+        $order->delivery_fee    = $validated['delivery_fee'] ?? 0;
+        $order->note            = $validated['note'] ?? null;
+        $order->status          = $validated['status'];
+        $order->payment_method  = $validated['payment_method'] ?? 'សាច់ប្រាក់';
+        $order->save();
+
+        // ៣. ដំណើរការកាត់ស្តុកទំនិញ និងកត់ត្រា order_items
+        $cartItems = json_decode($request->cart_data, true);
+
+        if ($cartItems && is_array($cartItems)) {
+            foreach ($cartItems as $item) {
+
+                $product = \App\Models\Product::find($item['id']);
+                $sell_qty = $item['qty']; // ចំនួនដែលអតិថិជនទិញ
+
+                if ($product) {
+                    // ទាញយកទិន្នន័យកូនពី bundle_items ដោយប្រើ product_id ត្រឹមត្រូវ
+                    $subItems = \DB::table('bundle_items')
+                                   ->where('product_id', $product->id)
+                                   ->orWhere('product_bundle_id', $product->id)
+                                   ->get();
+
+                    if ($subItems->count() > 0) {
+                        // ប្រសិនបើវាជាទំនិញឈុត (Bundle) => កាត់ស្តុកកូនៗ
+                        foreach ($subItems as $sub) {
+                            $childId = $sub->product_id ?? $sub->item_id;
+                            $childProduct = \App\Models\Product::find($childId);
+
+                            if ($childProduct) {
+                                $bundle_item_qty = $sub->qty ?? $sub->quantity ?? 1;
+                                $qtyToDeduct = $bundle_item_qty * $sell_qty;
+
+                                // កាត់ស្តុកកូនចេញ
+                                $childProduct->decrement('qty', $qtyToDeduct);
+                            }
+                        }
+                    } else {
+                        // ប្រសិនបើវាជាទំនិញរាយធម្មតា => កាត់ស្តុកធម្មតា
+                        $product->decrement('qty', $sell_qty);
+                    }
+                }
+
+                // ៤. បង្កើតទិន្នន័យលម្អិតចូលតារាង order_items
+                \App\Models\OrderItem::create([
+                    'order_id'   => $order->id,
+                    'product_id' => $item['id'],
+                    'qty'        => $sell_qty,
+                    'unit_price' => $item['price'],
+                    'total'      => $sell_qty * $item['price'],
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', 'ទូទាត់ប្រាក់ និងកាត់ស្តុកបានជោគជ័យ!');
+
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'បរាជ័យ! មានបញ្ហាក្នុងការទូទាត់៖ ' . $e->getMessage());
     }
+}
     // 🔴 Function សម្រាប់ទំព័រព័ត៌មានលក់ថ្ងៃនេះ
     // 🔴 Function សម្រាប់ទំព័រព័ត៌មានលក់ថ្ងៃនេះ 🔴
     // 🔴 មុខងារទាញយករបាយការណ៍លក់ (អាច Filter តាមថ្ងៃបាន) 🔴
