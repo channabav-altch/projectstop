@@ -502,18 +502,18 @@ public function teamReport(\Illuminate\Http\Request $request)
     $totalRevenue = (clone $baseOrderQuery)->sum('total_amount') ?? 0;
 
     // លក់រាយ (Retail Revenue)
-    $retailRevenue = (clone $baseOrderQuery)
-        ->where(function($q) {
-            $q->where('customer_type', 'walkin')
-              ->orWhere('customer_type', 'retail')
-              ->orWhereNull('customer_type');
-        })
-        ->sum('total_amount') ?? 0;
+$retailRevenue = (clone $baseOrderQuery)
+    ->where(function($q) {
+        $q->where('customer_type', 'walkin')
+          ->orWhere('customer_type', 'retail')
+          ->orWhereNull('customer_type');
+    })
+    ->sum('total_amount') ?? 0;
 
-    // លក់ដុំ (Wholesale Revenue)
-    $wholesaleRevenue = (clone $baseOrderQuery)
-        ->where('customer_type', 'wholesale')
-        ->sum('total_amount') ?? 0;
+// លក់ដុំ (Wholesale Revenue)
+$wholesaleSales = (clone $baseOrderQuery)
+    ->where('customer_type', 'wholesale')
+    ->sum('total_amount') ?? 0;
 
     // 🟢 ៣. Query ទិន្នន័យអ្នកលក់/បុគ្គលិក (Subqueries) 🟢
     $userQuery = \App\Models\User::query()
