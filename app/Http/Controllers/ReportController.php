@@ -483,24 +483,18 @@ $getDataByRegionAndStatus = function($provinceCondition, $orderStatus) use ($app
 }
 public function teamReport(\Illuminate\Http\Request $request)
 {
-    // 🟢 បង្ខំសម្អាត Cache លើ Server ដើម្បីឱ្យកូដ និងទិន្នន័យថ្មីដំណើរការភ្លាមៗ 🟢
-    \Illuminate\Support\Facades\Artisan::call('cache:clear');
-    \Illuminate\Support\Facades\Artisan::call('view:clear');
-    \Illuminate\Support\Facades\Artisan::call('route:clear');
-
     $date = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
     $type = $request->input('type', 'all');
     $status = $request->input('status', 'all');
     $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
-    // 🟢 ទាញយកទឹកប្រាក់សរុបផ្ទាល់ពី Table orders មកបង្ហាញ ១០០% 🟢
+    // យកទឹកប្រាក់សរុបពី orders ផ្ទាល់
     $totalRevenue = \DB::table('orders')->sum('total_amount') ?? 0;
 
     $retailRevenue = $totalRevenue;
     $wholesaleRevenue = 0;
 
-    // 🟢 ទាញយកទិន្នន័យ User និងទឹកប្រាក់លក់របស់ពួកគេ 🟢
     $userQuery = \App\Models\User::query()
         ->addSelect([
             'count_invoices' => \DB::table('orders')
@@ -526,8 +520,6 @@ public function teamReport(\Illuminate\Http\Request $request)
     }
 
     $reports = $userQuery->paginate(15);
-
-    // ទាញយកទិន្នន័យចំណាយ (Expenses)
     $expenses = \DB::table('expenses')->orderBy('id', 'desc')->get();
 
     return view('reports.team', compact(
