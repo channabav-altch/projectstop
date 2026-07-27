@@ -702,24 +702,27 @@ public function teamReport(\Illuminate\Http\Request $request)
     }
 
     // ២. រក្សាទុកការកែប្រែចូល Database (Update)
-    public function updateExpense(Request $request, $id)
-    {
-        $request->validate([
-            'description' => 'required|string|max:255',
-            'amount'      => 'required|numeric|min:0',
-        ]);
+    public function updateExpense(\Illuminate\Http\Request $request, $id)
+{
+    // ១. Validate ទិន្នន័យ
+    $request->validate([
+        'description' => 'required|string|max:255',
+        'amount'      => 'required|numeric|min:0',
+    ]);
 
-        $expense = \App\Models\Expense::findOrFail($id);
-        $expense->update([
-            'title'        => $request->description,
-            'description'  => $request->description,
-            'amount'       => $request->amount,
-            'expense_date' => $request->expense_date ?? $expense->expense_date,
-        ]);
+    // ២. ស្វែងរកទិន្នន័យចំណាយតាម ID
+    $expense = \App\Models\Expense::findOrFail($id);
 
-        // 🔴 កែពី route('team-report') មកជា url('/team-report') វិញ 🔴
-return redirect(url('/team-report'))->with('success', 'កែប្រែចំណាយបានជោគជ័យ! ✅');
-    }
+    // ៣. Update ចូល Database (ដក 'title' ចេញ ដើម្បីកុំឱ្យ Error)
+    $expense->update([
+        'description'  => $request->description,
+        'amount'       => $request->amount,
+        'expense_date' => $request->expense_date ?? $expense->expense_date,
+    ]);
+
+    // ៤. Redirect ត្រឡប់ទៅវិញ
+    return redirect(url('/team-report'))->with('success', 'បានកែប្រែការចំណាយបានជោគជ័យ!');
+}
 
     // ៣. លុបទិន្នន័យ (Delete)
     public function destroyExpense($id)
