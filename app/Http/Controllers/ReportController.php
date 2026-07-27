@@ -483,76 +483,86 @@ $getDataByRegionAndStatus = function($provinceCondition, $orderStatus) use ($app
 }
 public function teamReport(\Illuminate\Http\Request $request)
 {
-    // 🟢 ១. ចាប់យកតម្លៃដែលបញ្ជូនមកពី URL
-    $date          = $request->input('date', date('Y-m-d'));
+    // 🟢 ១. ចាប់យកតម្លៃដែលបញ្ជូនមកពី URL ( support ទាំង date និង selectedDate)
+    $date          = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
     $type          = $request->input('type', 'all');
     $status        = $request->input('status', 'all');
     $search        = $request->input('search');
-    $expensePeriod = $request->input('expense_period', 'daily'); // សម្រាប់កំណត់ ប្រចាំថ្ងៃ/ខែ/ឆ្នាំ របស់ចំណាយ
+    $expensePeriod = $request->input('expense_period', 'daily');
 
-    // 🟢 ២. Query ទិន្នន័យការលក់ (ប្រើឈ្មោះថ្មីការពារកុំឱ្យជាន់គ្នាជាមួយ Model) 🟢
-    $query = \App\Models\User::query()
+    // បញ្ជី status ដែលចាត់ទុកថាជាការលក់ជោគជ័យ
+    $paidStatuses = ['PAID', 'paid', 'បង់រួច'];
+
+    // 🟢 ២. គណនា Card ផ្នែកខាងលើ (Total, Retail, Wholesale) 🟢
+    $baseOrderQuery = \DB::table('orders')
+        ->whereDate('created_at', $date)
+        ->whereIn('status', $paidStatuses);
+
+    // ចំណូលសរុប (Total Revenue)
+    $totalRevenue = (clone $baseOrderQuery)->sum('total_amount') ?? 0;
+
+    // លក់រាយ (Retail Revenue)
+    $retailRevenue = (clone $baseOrderQuery)
+        ->where(function($q) {
+            $q->where('customer_type', 'walkin')
+              ->orWhere('customer_type', 'retail')
+              ->orWhereNull('customer_type');
+        })
+        ->sum('total_amount') ?? 0;
+
+    // លក់ដុំ (Wholesale Revenue)
+    $wholesaleRevenue = (clone $baseOrderQuery)
+        ->where('customer_type', 'wholesale')
+        ->sum('total_amount') ?? 0;
+
+    // 🟢 ៣. Query ទិន្នន័យអ្នកលក់/បុគ្គលិក (Subqueries) 🟢
+    $userQuery = \App\Models\User::query()
         ->addSelect([
-            // រាប់ចំនួនវិក្កយបត្រ
+            // រាប់ចំនួនវិក្កយបត្រ (តែ PAID ប៉ុណ្ណោះ)
             'count_invoices' => \DB::table('orders')
                 ->selectRaw('count(*)')
                 ->whereColumn('orders.user_id', 'users.id')
-                ->whereDate('orders.created_at', $date),
+                ->whereDate('orders.created_at', $date)
+                ->whereIn('orders.status', $paidStatuses),
 
-            // បូកទឹកប្រាក់សរុប
+            // បូកទឹកប្រាក់សរុប (តែ PAID ប៉ុណ្ណោះ)
             'sum_total_sales' => \DB::table('orders')
-                ->selectRaw('sum(total_amount)')
-                ->whereColumn('orders.user_id', 'users.id')
-                ->whereDate('orders.created_at', $date),
-
-            // បូកបរិមាណទំនិញសរុប (ប្រើ order_items.qty តាម Database)
-            'sum_total_units' => \DB::table('order_items')
-                ->join('orders', 'order_items.order_id', '=', 'orders.id')
-                ->selectRaw('sum(order_items.qty)')
+                ->selectRaw('COALESCE(sum(total_amount), 0)')
                 ->whereColumn('orders.user_id', 'users.id')
                 ->whereDate('orders.created_at', $date)
+                ->whereIn('orders.status', $paidStatuses),
+
+            // បូកបរិមាណទំនិញសរុប (UNITS តែ PAID ប៉ុណ្ណោះ)
+            'sum_total_units' => \DB::table('order_items')
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->selectRaw('COALESCE(sum(order_items.qty), 0)')
+                ->whereColumn('orders.user_id', 'users.id')
+                ->whereDate('orders.created_at', $date)
+                ->whereIn('orders.status', $paidStatuses)
         ]);
 
+    // តម្រងរកតាមឈ្មោះ
     if ($search) {
-        $query->where('name', 'LIKE', "%{$search}%");
+        $userQuery->where('name', 'LIKE', "%{$search}%");
     }
 
+    // តម្រងរកតាម Role បុគ្គលិក
     if ($type && $type !== 'all') {
-        $query->where('role', $type);
+        $userQuery->where('role', $type);
     }
 
-    $reports = $query->paginate(15);
+    $reports = $userQuery->paginate(15);
 
-    // 🟢 ៣. គណនាយកទឹកប្រាក់សរុបសម្រាប់ Card ខាងលើ 🟢
-    $totalRevenue = \DB::table('orders')
-        ->whereDate('created_at', $date)
-        ->sum('total_amount');
-
-    $retailRevenue = \DB::table('orders')
-        ->join('users', 'orders.user_id', '=', 'users.id')
-        ->whereDate('orders.created_at', $date)
-        ->where('users.role', 'retail')
-        ->sum('orders.total_amount');
-
-    $wholesaleRevenue = \DB::table('orders')
-        ->join('users', 'orders.user_id', '=', 'users.id')
-        ->whereDate('orders.created_at', $date)
-        ->where('users.role', 'wholesale')
-        ->sum('orders.total_amount');
-
-    // 🟢 ៤. កែប្រែការទាញទិន្នន័យចំណាយ ឱ្យដើរតាមលក្ខខណ្ឌ ថ្ងៃ/ខែ/ឆ្នាំ 🟢
+    // 🟢 ៤. ទាញទិន្នន័យចំណាយ (Expenses) ដើរតាម ថ្ងៃ/ខែ/ឆ្នាំ 🟢
     $expenseQuery = \DB::table('expenses');
-    $parsedDate = \Carbon\Carbon::parse($date); // បំបែកថ្ងៃខែដើម្បីងាយស្រួលចាប់យក ខែ និងឆ្នាំ
+    $parsedDate    = \Carbon\Carbon::parse($date);
 
     if ($expensePeriod == 'monthly') {
-        // បើជ្រើសរើសខែ គឺទាញយកចំណាយពេញមួយខែ និងឆ្នាំនោះ
         $expenseQuery->whereMonth('created_at', $parsedDate->month)
                      ->whereYear('created_at', $parsedDate->year);
     } elseif ($expensePeriod == 'yearly') {
-        // បើជ្រើសរើសឆ្នាំ គឺទាញយកចំណាយពេញមួយឆ្នាំនោះតែម្តង
         $expenseQuery->whereYear('created_at', $parsedDate->year);
     } else {
-        // លំនាំដើម (daily) គឺទាញយកតែថ្ងៃដែលបានរើស
         $expenseQuery->whereDate('created_at', $date);
     }
 
@@ -569,8 +579,13 @@ public function teamReport(\Illuminate\Http\Request $request)
         'retailRevenue',
         'wholesaleRevenue',
         'expenses',
-        'expensePeriod' // <--- បញ្ជូនទៅ View សម្រាប់បញ្ជាពណ៌ប៊ូតុង
-    ));
+        'expensePeriod'
+    ))->with([
+        'selectedDate'   => $date,
+        'retailSales'    => $retailRevenue,
+        'wholesaleSales' => $wholesaleRevenue,
+        'teamReports'    => $reports
+    ]);
 }
     // ==========================================
     // មុខងារទាក់ទងនឹង ការចំណាយ (Expense)
