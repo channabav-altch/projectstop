@@ -175,7 +175,7 @@ return view('pos.summary', compact('totalInvoices', 'totalDeliveryFee', 'totalPr
 
 public function checkout(Request $request)
 {
-    dd($request->all());
+    // dd($request->all());
     // ១. ទទួលទិន្នន័យដែល JavaScript បោះមកឲ្យ
     $cartData = json_decode($request->cart_data, true);
 
