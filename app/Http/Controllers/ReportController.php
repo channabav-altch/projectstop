@@ -495,21 +495,13 @@ public function teamReport(\Illuminate\Http\Request $request)
         $baseOrderQuery->whereDate('created_at', $date);
     }
 
+    // យកទឹកប្រាក់សរុបទាំងអស់ត្រង់ៗពី Database តែម្ដង
     $totalRevenue = (clone $baseOrderQuery)->sum('total_amount') ?? 0;
 
-    $retailRevenue = (clone $baseOrderQuery)
-        ->where(function($q) {
-            $q->where('customer_type', 'walkin')
-              ->orWhere('customer_type', 'retail')
-              ->orWhereNull('customer_type');
-        })
-        ->sum('total_amount') ?? 0;
+    // មិនមាន Column customer_类型 ទេ ដូច្នេះកំណត់តម្លៃបណ្តោះអាសន្នដើម្បីកុំឱ្យ Error
+    $retailRevenue = $totalRevenue;
+    $wholesaleRevenue = 0;
 
-    $wholesaleRevenue = (clone $baseOrderQuery)
-        ->where('customer_type', 'wholesale')
-        ->sum('total_amount') ?? 0;
-
-    // 🟢 ប្រើប្រាស់ត្រឹម user_id ព្រោះក្នុង DB របស់បងមានតែ Column នេះ 🟢
     $userQuery = \App\Models\User::query()
         ->addSelect([
             'count_invoices' => \DB::table('orders')
