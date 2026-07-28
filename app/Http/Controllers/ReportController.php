@@ -483,27 +483,41 @@ $getDataByRegionAndStatus = function($provinceCondition, $orderStatus) use ($app
 }
 public function teamReport(\Illuminate\Http\Request $request)
 {
-    // ១. ទទួលយកថ្ងៃខែពីការជ្រើសរើស (បើមិនរើស យកថ្ងៃបច្ចុប្បន្ន)
     $date = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
     $type = $request->input('type', 'all');
     $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
-    // ២. ទាញយកបញ្ជី Users និងគណនាទិន្នន័យ (តាមថ្ងៃដែលបានជ្រើសរើស $date)
+    // ២. ទាញយកបញ្ជី Users
     $userQuery = \DB::table('users')
         ->select('users.id', 'users.name', 'users.email', 'users.role')
+
+        // រាប់ចំនួន វិក្កយបត្រ
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COUNT(*)')
                   ->from('orders')
                   ->whereColumn('orders.user_id', 'users.id')
                   ->whereDate('orders.created_at', $date);
         }, 'count_invoices')
+
+        // 🌟 [បន្ថែមថ្មី] រាប់ចំនួន អតិថិជន (ដោយរាប់ customer_id មិនឱ្យជាន់គ្នា)
+        ->selectSub(function ($query) use ($date) {
+            $query->selectRaw('COUNT(DISTINCT orders.customer_id)')
+                  ->from('orders')
+                  ->whereColumn('orders.user_id', 'users.id')
+                  ->whereDate('orders.created_at', $date)
+                  ->whereNotNull('orders.customer_id'); // មិនរាប់បញ្ចូលអ្នកដែលមិនបានបញ្ជូលឈ្មោះអតិថិជន
+        }, 'count_customers')
+
+        // បូកសរុប ទឹកប្រាក់
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COALESCE(SUM(total_amount), 0)')
                   ->from('orders')
                   ->whereColumn('orders.user_id', 'users.id')
                   ->whereDate('orders.created_at', $date);
         }, 'sum_total_sales')
+
+        // បូកសរុប ចំនួនឯកតា
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COALESCE(SUM(order_items.qty), 0)')
                   ->from('order_items')
@@ -522,32 +536,22 @@ public function teamReport(\Illuminate\Http\Request $request)
 
     $reports = $userQuery->paginate(15);
 
-    // ៣. គណនាទឹកប្រាក់សរុបប្រចាំថ្ងៃ (សម្រាប់បង្ហាញលើប្រអប់ធំៗខាងលើ)
+    // ៣. គណនាទឹកប្រាក់សរុប
     $totalRevenue = \DB::table('orders')->whereDate('created_at', $date)->sum('total_amount') ?? 0;
-
     $retailRevenue = $totalRevenue;
     $wholesaleRevenue = 0;
-
     $expenses = \DB::table('expenses')->whereDate('created_at', $date)->orderBy('id', 'desc')->get();
 
-    // ៤. បញ្ជូនអថេរទៅកាន់ Blade គ្រប់ទម្រង់ឈ្មោះ ដើម្បីកុំឱ្យវាបាត់ $0.00 ទៀត
     return view('reports.team', array_merge(compact(
         'reports', 'date', 'type', 'search', 'totalRevenue', 'retailRevenue', 'wholesaleRevenue', 'expenses', 'expensePeriod'
     ), [
         'selectedDate'    => $date,
         'teamReports'     => $reports,
-
-        // ឈ្មោះអថេរទម្រង់ទី ១ (CamelCase)
         'totalSales'      => $totalRevenue,
         'retailSales'     => $retailRevenue,
         'wholesaleSales'  => $wholesaleRevenue,
-
-        // ឈ្មោះអថេរទម្រង់ទី ២ (Snake_Case) - បន្ថែមថ្មីក្រែងលោ Blade ត្រូវការឈ្មោះនេះ
         'total_revenue'   => $totalRevenue,
         'total_sales'     => $totalRevenue,
-        'retail_revenue'  => $retailRevenue,
-        'retail_sales'    => $retailRevenue,
-        'wholesale_sales' => $wholesaleRevenue,
     ]));
 }
     // ==========================================
