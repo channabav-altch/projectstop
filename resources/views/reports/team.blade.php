@@ -172,13 +172,13 @@
                             <th class="px-6 py-5 text-right">ចំណូល</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#1C2C4E]/50">
-    @forelse($reports ?? [] as $key => $manager)
+                   <tbody class="divide-y divide-[#1C2C4E]/50">
+    @forelse(($reports ?? $teamReports ?? []) as $key => $manager)
         <tr class="border-b border-[#1C2C4E]/80 hover:bg-white/[0.02] transition-all duration-300 group">
 
             <!-- ១. លំដាប់ (#) -->
             <td class="px-6 py-4 text-sm font-bold text-slate-500 group-hover:text-slate-300 transition-colors">
-                #{{ $loop->iteration }}
+                #{{ $key + 1 }}
             </td>
 
             <!-- ២. រូបតំណាង (Avatar) + ឈ្មោះអ្នកលក់ -->
@@ -218,9 +218,9 @@
                 <span class="text-slate-500 text-xs ml-1">ឯកតា</span>
             </td>
 
-            <!-- ៦. ចំនួនអតិថិជន -->
+            <!-- ៦. ចំនួនអតិថិជន (កែរួចរាល់ ✅) -->
             <td class="px-6 py-4 text-center text-sm font-bold text-slate-300">
-                <span class="text-slate-300 text-base">0</span>
+                <span class="text-slate-300 text-base">{{ $manager->total_customers ?? $manager->count_customers ?? 0 }}</span>
                 <span class="text-slate-500 text-xs ml-1">នាក់</span>
             </td>
 
