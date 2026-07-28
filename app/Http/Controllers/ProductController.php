@@ -56,11 +56,14 @@ class ProductController extends Controller
     // 🟢 ចាប់យក Category ពី Form
     $product->category   = $request->category ?? 'General';
 
-    // ៣. បញ្ចូលរូបភាព ជំនាន់ថ្មី (កែតម្រូវឲ្យត្រូវជាមួយ Railway និង Blade) 🟢
+    // ៣. បញ្ចូលរូបភាព (កែតម្រូវរក្សាទុកក្នុង public/uploads/products ផ្ទាល់) 🟢
     if ($request->hasFile('image')) {
-        // ប្រើប្រាស់មុខងារ store របស់ Laravel ដើម្បីទុករូបក្នុង Folder Storage ស្តង់ដារ
-        $imagePath = $request->file('image')->store('products', 'public');
-        $product->image = $imagePath; // វានឹងរក្សាទុកឈ្មោះ "products/ឈ្មោះឯកសារ.jpg" ចូល DB
+        $imageName = time() . '_' . $request->image->getClientOriginalName();
+        // ផ្លាស់ទីរូបភាពចូលទៅថត public/uploads/products
+        $request->image->move(public_path('uploads/products'), $imageName);
+
+        // រក្សាទុក Path ចូល Database ក្នុងទម្រង់ uploads/products/...
+        $product->image = 'uploads/products/' . $imageName;
     }
 
     $product->save(); // 🟢 Save បង្កើត ID មេ
