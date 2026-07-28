@@ -483,24 +483,48 @@ $getDataByRegionAndStatus = function($provinceCondition, $orderStatus) use ($app
 }
 public function teamReport(\Illuminate\Http\Request $request)
 {
+    // ទាញយកថ្ងៃខែដែលបានជ្រើសរើស (បើគ្មានទេ យកថ្ងៃបច្ចុប្បន្ន)
     $date = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
     $type = $request->input('type', 'all');
     $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
-    // ១. ទាញយកទឹកប្រាក់សរុបទាំងអស់ពី table orders ដោយផ្ទាល់
-    $totalRevenue = \DB::table('orders')->sum('total_amount') ?? 0;
+    // ១. ទាញយកទឹកប្រាក់សរុប (ត្រងយកតែទិន្នន័យតាមថ្ងៃដែលបានជ្រើសរើស $date)
+    $totalRevenue = \DB::table('orders')
+        ->whereDate('created_at', $date)
+        ->sum('total_amount') ?? 0;
 
     $retailRevenue = $totalRevenue;
     $wholesaleRevenue = 0;
 
-    // ២. ទាញយកបញ្ជី Users និងគណនាតម្លៃលក់របស់ពួកគេផ្ទាល់ពី orders តាមរយៈ DB::table
+    // ២. ទាញយកបញ្ជី Users ដោយប្រើប្រាស់ Laravel Subqueries ដែលធានាមិន Error ជាមួយ Postgres
     $userQuery = \DB::table('users')
-        ->select('users.id', 'users.name', 'users.email', 'users.role',
-            \DB::raw('(SELECT COUNT(*) FROM orders WHERE orders.user_id = users.id) as count_invoices'),
-            \DB::raw('(SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE orders.user_id = users.id) as sum_total_sales'),
-            \DB::raw('(SELECT COALESCE(SUM(order_items.qty), 0) FROM order_items JOIN orders ON order_items.order_id = orders.id WHERE orders.user_id = users.id) as sum_total_units')
-        );
+        ->select('users.id', 'users.name', 'users.email', 'users.role')
+
+        // រាប់ចំនួនវិក្កយបត្រតាមថ្ងៃនីមួយៗ
+        ->selectSub(function ($query) use ($date) {
+            $query->selectRaw('COUNT(*)')
+                  ->from('orders')
+                  ->whereColumn('orders.user_id', 'users.id')
+                  ->whereDate('created_at', $date);
+        }, 'count_invoices')
+
+        // បូកសរុបទឹកប្រាក់លក់តាមថ្ងៃនីមួយៗ
+        ->selectSub(function ($query) use ($date) {
+            $query->selectRaw('COALESCE(SUM(total_amount), 0)')
+                  ->from('orders')
+                  ->whereColumn('orders.user_id', 'users.id')
+                  ->whereDate('created_at', $date);
+        }, 'sum_total_sales')
+
+        // បូកសរុបចំនួនទំនិញលក់ចេញតាមថ្ងៃនីមួយៗ
+        ->selectSub(function ($query) use ($date) {
+            $query->selectRaw('COALESCE(SUM(order_items.qty), 0)')
+                  ->from('order_items')
+                  ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                  ->whereColumn('orders.user_id', 'users.id')
+                  ->whereDate('orders.created_at', $date);
+        }, 'sum_total_units');
 
     if ($search) {
         $userQuery->where('users.name', 'LIKE', "%{$search}%");
@@ -512,8 +536,11 @@ public function teamReport(\Illuminate\Http\Request $request)
 
     $reports = $userQuery->paginate(15);
 
-    // ៣. ទាញយកទិន្នន័យចំណាយ (Expenses)
-    $expenses = \DB::table('expenses')->orderBy('id', 'desc')->get();
+    // ៣. ទាញយកទិន្នន័យចំណាយ (ត្រងតាមថ្ងៃ $date)
+    $expenses = \DB::table('expenses')
+        ->whereDate('created_at', $date)
+        ->orderBy('id', 'desc')
+        ->get();
 
     return view('reports.team', compact(
         'reports',
