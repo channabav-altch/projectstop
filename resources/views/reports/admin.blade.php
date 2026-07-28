@@ -541,7 +541,7 @@
 
     <div class="flex justify-between py-1">
         <span>• លក់ដុំ (តម្លៃទំនិញសុទ្ធ):</span>
-        {{-- <span>0.00 $ (សរុប 0 នាក់)</span> --}}
+        <span>0.00 $ (សរុប 0 នាក់)</span>
     </div>
 
     <div class="flex justify-between py-1 border-b border-slate-700">
