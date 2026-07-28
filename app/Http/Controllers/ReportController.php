@@ -484,39 +484,33 @@ $getDataByRegionAndStatus = function($provinceCondition, $orderStatus) use ($app
 public function teamReport(\Illuminate\Http\Request $request)
 {
     $date = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
-    $type = $request->input('type', 'all');
+    $type = $request->input('type', 'all'); // ប្រភេទត្រង (all, retail, wholesale, delivery, walkin)
     $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
-    // ១. គណនាទិន្នន័យសរុបសម្រាប់ប្រអប់ខាងលើ (Summary Cards)
+    // ១. គណនាទឹកប្រាក់សរុប និងអតិថិជនសរុបប្រចាំថ្ងៃ (សម្រាប់ប្រអប់ខាងលើ)
     $totalRevenue = \DB::table('orders')->whereDate('created_at', $date)->sum('total_amount') ?? 0;
     $retailRevenue = $totalRevenue;
     $wholesaleRevenue = 0;
 
-    // រាប់ចំនួនអតិថិជនសរុប រាយ និងដុំ ផ្អែកលើ customer_type ក្នុងตារាង orders
     $totalCustomers = \DB::table('orders')->whereDate('created_at', $date)->count();
-    $retailCustomers = \DB::table('orders')->whereDate('created_at', $date)->where('customer_type', 'retail')->count();
-    $wholesaleCustomers = \DB::table('orders')->whereDate('created_at', $date)->where('customer_type', 'wholesale')->count();
+    $retailCustomers = \DB::table('orders')->whereDate('created_at', $date)->count();
+    $wholesaleCustomers = 0;
 
-    // ២. ទាញយកបញ្ជី Users និងទិន្នន័យសម្រាប់តារាងខាងក្រោម (ប្រើប្រាស់ Subqueries)
+    // ២. ទាញយកបញ្ជី Users និងទិន្នន័យសម្រាប់តារាងខាងក្រោម
     $userQuery = \DB::table('users')
         ->select('users.id', 'users.name', 'users.email', 'users.role')
 
-        // រាប់ចំនួនវិក្កយបត្រតាម User នីមួយៗ
-        ->selectSub(function ($query) use ($date) {
+        // រាប់ចំនួនវិក្កយបត្រ (ត្រងតាម type បើមានការជ្រើសរើស)
+        ->selectSub(function ($query) use ($date, $type) {
             $query->selectRaw('COUNT(*)')
                   ->from('orders')
                   ->whereColumn('orders.user_id', 'users.id')
                   ->whereDate('orders.created_at', $date);
+            if ($type && $type !== 'all') {
+                $query->where('customer_type', $type);
+            }
         }, 'count_invoices')
-
-        // រាប់ចំនួនអតិថិជនសរុบតាម User នីមួយៗ (គ្រប់ឈ្មោះអថេរការពារការហៅខុស)
-        ->selectSub(function ($query) use ($date) {
-            $query->selectRaw('COUNT(*)')
-                  ->from('orders')
-                  ->whereColumn('orders.user_id', 'users.id')
-                  ->whereDate('orders.created_at', $date);
-        }, 'count_customers')
 
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COUNT(*)')
@@ -525,37 +519,35 @@ public function teamReport(\Illuminate\Http\Request $request)
                   ->whereDate('orders.created_at', $date);
         }, 'total_customers')
 
-        ->selectSub(function ($query) use ($date) {
-            $query->selectRaw('COUNT(*)')
-                  ->from('orders')
-                  ->whereColumn('orders.user_id', 'users.id')
-                  ->whereDate('orders.created_at', $date);
-        }, 'customer_count')
-
-        // បូកសរុบទឹកប្រាក់តាម User
-        ->selectSub(function ($query) use ($date) {
+        // បូកសរុបទឹកប្រាក់តាម User (ត្រងតាម type ផងដែរ)
+        ->selectSub(function ($query) use ($date, $type) {
             $query->selectRaw('COALESCE(SUM(total_amount), 0)')
                   ->from('orders')
                   ->whereColumn('orders.user_id', 'users.id')
                   ->whereDate('orders.created_at', $date);
+            if ($type && $type !== 'all') {
+                $query->where('customer_type', $type);
+            }
         }, 'sum_total_sales')
 
         // បូកសរុបចំនួនទំនិញលក់ចេញ (Units) តាម User
-        ->selectSub(function ($query) use ($date) {
+        ->selectSub(function ($query) use ($date, $type) {
             $query->selectRaw('COALESCE(SUM(order_items.qty), 0)')
                   ->from('order_items')
                   ->join('orders', 'order_items.order_id', '=', 'orders.id')
                   ->whereColumn('orders.user_id', 'users.id')
                   ->whereDate('orders.created_at', $date);
+            if ($type && $type !== 'all') {
+                $query->where('customer_type', $type);
+            }
         }, 'sum_total_units');
 
     if ($search) {
         $userQuery->where('users.name', 'LIKE', "%{$search}%");
     }
 
-    if ($type && $type !== 'all') {
-        $userQuery->where('users.role', $type);
-    }
+    // កុំឱ្យវា Error បើ type ជា retail/wholesale តែក្នុង users គ្មាន role ហ្នឹង (យើងឱ្យវាបង្ហាញ User ទាំងអស់មកវិញ តែទិន្នន័យខាងក្នុងតារាងនឹងត្រងតាម type លើ orders វិញ)
+    // ដូច្នេះយើងលុプ $userQuery->where('users.role', $type) ចោល ជំនួសមកវិញដោយការត្រងលើ Subquery ខាងលើរួចជាស្រេច។
 
     $reports = $userQuery->paginate(15);
 
