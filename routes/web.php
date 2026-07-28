@@ -136,7 +136,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/admin-report/pdf', [StockController::class, 'exportAdminReportPdf'])->name('admin.report.pdf');
     Route::get('/admin-report/seller/{id}', [ReportController::class, 'sellerDetail'])->name('report.seller_detail');
 
-    Route::get('/team-report', [ReportController::class, 'index'])->name('report.index');
+    Route::get('/team-report', [ReportController::class, 'teamReport'])->name('report.index');
     Route::get('/finance', [ReportController::class, 'finance'])->name('finance.index');
     Route::get('/report/export', [ReportController::class, 'exportData'])->name('report.export');
 
