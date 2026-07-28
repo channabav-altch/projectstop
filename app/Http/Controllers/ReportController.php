@@ -499,20 +499,34 @@ public function teamReport(\Illuminate\Http\Request $request)
                   ->whereDate('orders.created_at', $date);
         }, 'count_invoices')
 
-        // ២. 🌟 រាប់ចំនួន អតិថិជន (ទោះអត់ជ្រើសរើសឈ្មោះក៏រាប់ដែរ)
-        // យើងបង្កើតឈ្មោះ ២ ផ្សេងគ្នា ដើម្បីឲ្យច្បាស់ថា HTML របស់បងហៅឈ្មោះមួយណាក៏ចេញលេខដែរ
+        // ២. 🌟 រាប់ចំនួន អតិថិជន (ដាក់គ្រប់ឈ្មោះរាល់ទម្រង់ទាំងអស់ ដើម្បីការពារការហៅខុសឈ្មោះក្នុង Blade)
         ->selectSub(function ($query) use ($date) {
-            $query->selectRaw('COUNT(DISTINCT COALESCE(orders.customer_id, orders.id))')
+            $query->selectRaw('COUNT(*)')
                   ->from('orders')
                   ->whereColumn('orders.user_id', 'users.id')
                   ->whereDate('orders.created_at', $date);
         }, 'count_customers')
+
         ->selectSub(function ($query) use ($date) {
-            $query->selectRaw('COUNT(DISTINCT COALESCE(orders.customer_id, orders.id))')
+            $query->selectRaw('COUNT(*)')
                   ->from('orders')
                   ->whereColumn('orders.user_id', 'users.id')
                   ->whereDate('orders.created_at', $date);
         }, 'total_customers')
+
+        ->selectSub(function ($query) use ($date) {
+            $query->selectRaw('COUNT(*)')
+                  ->from('orders')
+                  ->whereColumn('orders.user_id', 'users.id')
+                  ->whereDate('orders.created_at', $date);
+        }, 'customer_count')
+
+        ->selectSub(function ($query) use ($date) {
+            $query->selectRaw('COUNT(*)')
+                  ->from('orders')
+                  ->whereColumn('orders.user_id', 'users.id')
+                  ->whereDate('orders.created_at', $date);
+        }, 'customers_count')
 
         // ៣. បូកសរុប ទឹកប្រាក់
         ->selectSub(function ($query) use ($date) {
