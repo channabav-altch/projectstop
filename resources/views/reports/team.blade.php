@@ -168,7 +168,9 @@
                             <th class="px-6 py-5 text-center">ប្រភេទ</th>
                             <th class="px-6 py-5 text-center">តំណាងលក់សរុប</th>
                             <th class="px-6 py-5 text-center">ចំនួនលក់ (UNITS)</th>
-                            <th class="px-6 py-5 text-center">អតិថិជនសរុប</th>
+                            <td class="px-6 py-4 text-center">
+    {{ $manager->count_invoices ?? $manager->total_customers ?? 0 }} នាក់
+</td>
                             <th class="px-6 py-5 text-right">ចំណូល</th>
                         </tr>
                     </thead>
