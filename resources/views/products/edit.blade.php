@@ -15,9 +15,9 @@
 
         <!-- Header ត្រឡប់ក្រោយ -->
         <div class="flex items-center gap-4 mb-8 bg-white/70 backdrop-blur-xl p-4 rounded-3xl border border-white shadow-sm">
-            <a href="javascript:history.back()" class="w-12 h-12 rounded-2xl bg-white border border-slate-100 hover:bg-slate-50 hover:scale-105 flex items-center justify-center text-slate-600 font-bold transition-all shadow-sm">
-                ⬅
-            </a>
+            <a href="{{ route('stock.summary') }}" class="w-12 h-12 rounded-2xl bg-white border border-slate-100 hover:bg-slate-50 hover:scale-105 flex items-center justify-center text-slate-600 font-bold transition-all shadow-sm">
+    ⬅
+</a>
             <div>
                 <h1 class="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-2">
                     ✏️ កែប្រែទិន្នន័យទំនិញ (EDIT PRODUCT)
