@@ -108,12 +108,12 @@ class ProductController extends Controller
             // 'sku'       => 'nullable|string', // <-- លុបបន្ទាត់នេះចេញ
         ]);
 
-        // ២. បើមាន Upload រូបភាពថ្មី
-        if ($request->hasFile('image')) {
-            $imageName = time() . '.' . $request->image->extension();
-            $request->image->move(public_path('uploads/products'), $imageName);
-            $data['image'] = 'uploads/products/' . $imageName;
-        }
+        // ២. បើមាន Upload រូបភាពថ្មី (កូដថ្មី)
+    if ($request->hasFile('image')) {
+        // ប្រើប្រាស់ storage ដូចគ្នាទៅនឹងកន្លែង Store ដែរ
+        $imagePath = $request->file('image')->store('products', 'public');
+        $data['image'] = $imagePath;
+    }
 
         // ៣. Update ចូល Database (លែង Error ព្រោះគ្មាន sku ទៀតទេ)
         $product->update($data);
