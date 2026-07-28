@@ -151,10 +151,10 @@
                             @endif
 
                             <div class="card-img-wrapper relative w-full h-32 flex items-center justify-center mb-3 bg-slate-50 rounded-xl overflow-hidden">
-                     <img src="{{ $item->image ? asset('storage/' . $item->image) : 'https://ui-avatars.com/api/?name=No+Image&background=E2E8F0&color=64748B&size=150' }}"
-     onerror="this.src='https://ui-avatars.com/api/?name=No+Image&background=E2E8F0&color=64748B&size=150'"
+                    <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
+     onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
      alt="Product Image"
-     class="h-full w-full object-cover">
+     class="w-full h-full object-cover">
                             </div>
 
                             <div class="relative z-10 flex-1 flex flex-col justify-between">
