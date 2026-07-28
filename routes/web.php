@@ -150,6 +150,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/pos/ai-vision', [AiVisionController::class, 'extractInvoice']);
     Route::post('/extract-invoice', [AiVisionController::class, 'extractInvoice']);
 
+    Route::get('/link-storage', function () {
+    Artisan::call('storage:link');
+    return 'Storage linked successfully!';
+});
+
 });
 
 /*
