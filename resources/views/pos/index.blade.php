@@ -155,7 +155,8 @@
 <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
      onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
      alt="Product Image"
-     class="w-full h-full object-cover">
+     <!-- កែប្រែត្រង់នេះពី object-cover ទៅជា object-contain -->
+     class="w-full h-full object-contain">
 <!-- ចប់កូដរូបភាពថ្មី -->
                             </div>
 
