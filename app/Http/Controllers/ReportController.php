@@ -488,10 +488,21 @@ public function teamReport(\Illuminate\Http\Request $request)
     $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
+    // ១. គណនាទិន្នន័យសរុបសម្រាប់ប្រអប់ខាងលើ (Summary Cards)
+    $totalRevenue = \DB::table('orders')->whereDate('created_at', $date)->sum('total_amount') ?? 0;
+    $retailRevenue = $totalRevenue;
+    $wholesaleRevenue = 0;
+
+    // រាប់ចំនួនអតិថិជនសរុប រាយ និងដុំ ផ្អែកលើ customer_type ក្នុងตារាង orders
+    $totalCustomers = \DB::table('orders')->whereDate('created_at', $date)->count();
+    $retailCustomers = \DB::table('orders')->whereDate('created_at', $date)->where('customer_type', 'retail')->count();
+    $wholesaleCustomers = \DB::table('orders')->whereDate('created_at', $date)->where('customer_type', 'wholesale')->count();
+
+    // ២. ទាញយកបញ្ជី Users និងទិន្នន័យសម្រាប់តារាងខាងក្រោម (ប្រើប្រាស់ Subqueries)
     $userQuery = \DB::table('users')
         ->select('users.id', 'users.name', 'users.email', 'users.role')
 
-        // ១. រាប់ចំនួន វិក្កយបត្រ
+        // រាប់ចំនួនវិក្កយបត្រតាម User នីមួយៗ
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COUNT(*)')
                   ->from('orders')
@@ -499,7 +510,7 @@ public function teamReport(\Illuminate\Http\Request $request)
                   ->whereDate('orders.created_at', $date);
         }, 'count_invoices')
 
-        // ២. 🌟 រាប់ចំនួន អតិថិជន (ដាក់គ្រប់ឈ្មោះរាល់ទម្រង់ទាំងអស់ ដើម្បីការពារការហៅខុសឈ្មោះក្នុង Blade)
+        // រាប់ចំនួនអតិថិជនសរុบតាម User នីមួយៗ (គ្រប់ឈ្មោះអថេរការពារការហៅខុស)
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COUNT(*)')
                   ->from('orders')
@@ -521,14 +532,7 @@ public function teamReport(\Illuminate\Http\Request $request)
                   ->whereDate('orders.created_at', $date);
         }, 'customer_count')
 
-        ->selectSub(function ($query) use ($date) {
-            $query->selectRaw('COUNT(*)')
-                  ->from('orders')
-                  ->whereColumn('orders.user_id', 'users.id')
-                  ->whereDate('orders.created_at', $date);
-        }, 'customers_count')
-
-        // ៣. បូកសរុប ទឹកប្រាក់
+        // បូកសរុบទឹកប្រាក់តាម User
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COALESCE(SUM(total_amount), 0)')
                   ->from('orders')
@@ -536,7 +540,7 @@ public function teamReport(\Illuminate\Http\Request $request)
                   ->whereDate('orders.created_at', $date);
         }, 'sum_total_sales')
 
-        // ៤. បូកសរុប ចំនួនឯកតា
+        // បូកសរុបចំនួនទំនិញលក់ចេញ (Units) តាម User
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COALESCE(SUM(order_items.qty), 0)')
                   ->from('order_items')
@@ -555,22 +559,24 @@ public function teamReport(\Illuminate\Http\Request $request)
 
     $reports = $userQuery->paginate(15);
 
-    // ៥. គណនាទឹកប្រាក់សរុបប្រចាំថ្ងៃ សម្រាប់ប្រអប់ខាងលើ
-    $totalRevenue = \DB::table('orders')->whereDate('created_at', $date)->sum('total_amount') ?? 0;
-    $retailRevenue = $totalRevenue;
-    $wholesaleRevenue = 0;
+    // ៣. ទិន្នន័យចំណាយ (Expenses)
     $expenses = \DB::table('expenses')->whereDate('created_at', $date)->orderBy('id', 'desc')->get();
 
+    // ៤. បញ្ជូនទិន្នន័យទាំងអស់ទៅកាន់ Blade View
     return view('reports.team', array_merge(compact(
-        'reports', 'date', 'type', 'search', 'totalRevenue', 'retailRevenue', 'wholesaleRevenue', 'expenses', 'expensePeriod'
+        'reports', 'date', 'type', 'search', 'totalRevenue', 'retailRevenue', 'wholesaleRevenue',
+        'expenses', 'expensePeriod', 'totalCustomers', 'retailCustomers', 'wholesaleCustomers'
     ), [
-        'selectedDate'    => $date,
-        'teamReports'     => $reports,
-        'totalSales'      => $totalRevenue,
-        'retailSales'     => $retailRevenue,
-        'wholesaleSales'  => $wholesaleRevenue,
-        'total_revenue'   => $totalRevenue,
-        'total_sales'     => $totalRevenue,
+        'selectedDate'        => $date,
+        'teamReports'         => $reports,
+        'totalSales'          => $totalRevenue,
+        'retailSales'         => $retailRevenue,
+        'wholesaleSales'      => $wholesaleRevenue,
+        'total_revenue'       => $totalRevenue,
+        'total_sales'         => $totalRevenue,
+        'total_customers'     => $totalCustomers,
+        'retail_customers'    => $retailCustomers,
+        'wholesale_customers' => $wholesaleCustomers,
     ]));
 }
     // ==========================================
