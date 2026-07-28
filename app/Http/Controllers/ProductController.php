@@ -15,75 +15,74 @@ class ProductController extends Controller
     }
 
     public function store(Request $request)
-    {
-        // ១. ការពារកុំឲ្យ Error ទំព័រខ្មៅពេលអត់បញ្ជូនទិន្នន័យមក
-        $request->validate([
-            'product_name' => 'required',
-            'sale_price' => 'required|numeric',
-            'product_code' => 'required|unique:products,product_code'
-        ], [
-            // ប្ដូរសារ Error ទៅជាភាសាខ្មែរឲ្យងាយយល់
-            'product_code.unique' => 'លេខកូដទំនិញនេះមានរួចហើយ សូមប្រើលេខកូដផ្សេង!',
-            'product_code.required' => 'សូមបញ្ចូលលេខកូដទំនិញ!'
-        ]);
-        // ២. រក្សាទុកទំនិញចូល Database
-        $product = new Product();
-        $product->product_name = $request->product_name;
+{
+    // ១. ការពារកុំឲ្យ Error ទំព័រខ្មៅពេលអត់បញ្ជូនទិន្នន័យមក
+    $request->validate([
+        'product_name' => 'required',
+        'sale_price' => 'required|numeric',
+        'product_code' => 'required|unique:products,product_code'
+    ], [
+        // ប្ដូរសារ Error ទៅជាភាសាខ្មែរឲ្យងាយយល់
+        'product_code.unique' => 'លេខកូដទំនិញនេះមានរួចហើយ សូមប្រើលេខកូដផ្សេង!',
+        'product_code.required' => 'សូមបញ្ចូលលេខកូដទំនិញ!'
+    ]);
 
-        // 🟢 ចាប់យក SKU (បើគ្មាន វាបង្កើតថ្មី)
-        $product->product_code = $request->product_code ?? $request->sku ?? 'PRD-' . time();
+    // ២. រក្សាទុកទំនិញចូល Database
+    $product = new Product();
+    $product->product_name = $request->product_name;
 
-        // -------------------------------------------------------------------
-        // 🟢 ផ្នែកគណនាចំនួនសរុប (កេស និង រាយ) 🟢
-        // ចាប់យកទិន្នន័យដែលវាយបញ្ចូលពី Form
-        $cartonSize = $request->input('carton_size', 1); // ចំនួនក្នុង១កេស (បើទទេ ស្មើ 1)
-        $inputCartons = $request->input('cartons', 0);   // ចំនួនកេស
-        $inputPieces = $request->input('pieces', 0);     // ចំនួនរាយ
+    // 🟢 ចាប់យក SKU (បើគ្មាន វាបង្កើតថ្មី)
+    $product->product_code = $request->product_code ?? $request->sku ?? 'PRD-' . time();
 
-        // គណនារកចំនួនសរុប: (កេស * ក្នុង១កេស) + រាយ
-        $calculatedQty = ($inputCartons * $cartonSize) + $inputPieces;
+    // -------------------------------------------------------------------
+    // 🟢 ផ្នែកគណនាចំនួនសរុប (កេស និង រាយ) 🟢
+    $cartonSize = $request->input('carton_size', 1); // ចំនួនក្នុង១កេស (បើទទេ ស្មើ 1)
+    $inputCartons = $request->input('cartons', 0);   // ចំនួនកេស
+    $inputPieces = $request->input('pieces', 0);     // ចំនួនរាយ
 
-        // បើបានវាយបញ្ជូលកេស/រាយ វានឹងយកចំនួនដែលគណនាឃើញ តែបើអត់ទេ វាយកចំនួនក្នុងប្រអប់ Quantity ខាងលើ
-        $fallbackQty = $request->quantity ?? $request->qty ?? 0;
-        $product->qty = $calculatedQty > 0 ? $calculatedQty : $fallbackQty;
+    // គណនារកចំនួនសរុប: (កេស * ក្នុង១កេស) + រាយ
+    $calculatedQty = ($inputCartons * $cartonSize) + $inputPieces;
 
-        $product->carton_size = $cartonSize; // Save ចំនួនក្នុង១កេស ចូល Database
-        // -------------------------------------------------------------------
+    // បើបានវាយបញ្ជូលកេស/រាយ វានឹងយកចំនួនដែលគណនាឃើញ តែបើអត់ទេ វាយកចំនួនក្នុងប្រអប់ Quantity ខាងលើ
+    $fallbackQty = $request->quantity ?? $request->qty ?? 0;
+    $product->qty = $calculatedQty > 0 ? $calculatedQty : $fallbackQty;
 
-        $product->cost_price = $request->cost_price ?? $request->total_cost ?? 0;
-        $product->sale_price = $request->sale_price ?? 0;
+    $product->carton_size = $cartonSize; // Save ចំនួនក្នុង១កេស ចូល Database
+    // -------------------------------------------------------------------
 
-        // 🟢 ចាប់យក Category ពី Form
-        $product->category   = $request->category ?? 'General';
+    $product->cost_price = $request->cost_price ?? $request->total_cost ?? 0;
+    $product->sale_price = $request->sale_price ?? 0;
 
-        // ៣. បញ្ចូលរូបភាព (បើមាន Upload)
-        if ($request->hasFile('image')) {
-            $imageName = time() . '_' . $request->image->getClientOriginalName();
-            $request->image->move(public_path('uploads/products'), $imageName);
-            $product->image = 'uploads/products/' . $imageName;
-        }
+    // 🟢 ចាប់យក Category ពី Form
+    $product->category   = $request->category ?? 'General';
 
-        $product->save(); // 🟢 Save បង្កើត ID មេ
+    // ៣. បញ្ចូលរូបភាព ជំនាន់ថ្មី (កែតម្រូវឲ្យត្រូវជាមួយ Railway និង Blade) 🟢
+    if ($request->hasFile('image')) {
+        // ប្រើប្រាស់មុខងារ store របស់ Laravel ដើម្បីទុករូបក្នុង Folder Storage ស្តង់ដារ
+        $imagePath = $request->file('image')->store('products', 'public');
+        $product->image = $imagePath; // វានឹងរក្សាទុកឈ្មោះ "products/ឈ្មោះឯកសារ.jpg" ចូល DB
+    }
 
-        // ៤. កូដចាប់កូនៗ (បើទំនិញនេះជាប្រភេទ Bundle វានឹងដំណើរការកូដនេះ)
-        $items = $request->input('items', []);
-        if (!empty($items) && is_array($items)) {
-            foreach ($items as $item) {
-                if(isset($item['product_id'])) {
-                    \DB::table('bundle_items')->insert([
-                        'product_id' => $product->id,
-                        'product_bundle_id' => $product->id,
-                        'product_id'        => $item['product_id'],
-                        'quantity'          => $item['qty'] ?? 1,
-                        'created_at'        => now(),
-                        'updated_at'        => now()
-                    ]);
-                }
+    $product->save(); // 🟢 Save បង្កើត ID មេ
+
+    // ៤. កូដចាប់កូនៗ (បើទំនិញនេះជាប្រភេទ Bundle វានឹងដំណើរការកូដនេះ)
+    $items = $request->input('items', []);
+    if (!empty($items) && is_array($items)) {
+        foreach ($items as $item) {
+            if(isset($item['product_id'])) {
+                \DB::table('bundle_items')->insert([
+                    'product_bundle_id' => $product->id,
+                    'product_id'        => $item['product_id'],
+                    'quantity'          => $item['qty'] ?? 1,
+                    'created_at'        => now(),
+                    'updated_at'        => now()
+                ]);
             }
         }
-
-        return redirect()->back()->with('success', 'បានបញ្ចូលទំនិញ និងទិន្នន័យស្តុកដោយជោគជ័យ ១០០%!');
     }
+
+    return redirect()->back()->with('success', 'បានបញ្ចូលទំនិញ និងទិន្នន័យស្តុកដោយជោគជ័យ ១០០%!');
+}
     // ១. ទាញទិន្នន័យទៅបង្ហាញលើផ្ទាំងកែប្រែ
     public function edit($id)
     {
