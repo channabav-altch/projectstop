@@ -119,7 +119,7 @@ class ProductController extends Controller
         // ៣. Update ចូល Database (លែង Error ព្រោះគ្មាន sku ទៀតទេ)
         $product->update($data);
 
-        return redirect()->back()->with('success', 'កែប្រែទិន្នន័យបានជោគជ័យ! ✅');
+        return redirect()->route('stock.summary')->with('success', 'កែប្រែទិន្នន័យបានជោគជ័យ !');
     }
 
     // ៣. លុបទំនិញចោល
