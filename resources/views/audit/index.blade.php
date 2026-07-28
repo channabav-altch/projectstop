@@ -66,7 +66,7 @@
                             @forelse($products as $item)
                             <tr class="hover:bg-[#1C2C4E]/30 transition-colors">
                                 <!-- លេខកូដ -->
-                                <td class="px-6 py-4 font-mono text-slate-400">{{ $item->sku }}</td>
+                                <td class="px-6 py-4 font-mono text-slate-400">{{ $item->product_code }}</td>
 
                                 <!-- ឈ្មោះ -->
                                 <td class="px-6 py-4 font-bold text-slate-200">
