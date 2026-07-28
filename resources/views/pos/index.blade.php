@@ -150,15 +150,21 @@
                             </div>
                             @endif
 
-                            <div class="card-img-wrapper relative w-full h-32 flex items-center justify-center mb-3 bg-slate-50 rounded-xl overflow-hidden">
-                    <!-- ដាក់កូដរូបភាពថ្មីនៅទីនេះ แทนที่กូដចាស់ -->
-<img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
-     onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
-     alt="Product Image"
-     <!-- កែប្រែត្រង់នេះពី object-cover ទៅជា object-contain -->
-     class="w-full h-full object-contain">
-<!-- ចប់កូដរូបភាពថ្មី -->
-                            </div>
+                            <!-- 🟢 ប្រអប់រូបភាពទំនិញ (តម្រូវរូបភាពឱ្យពេញលេញ ចំកណ្តាល និងមិនដាច់) -->
+<div class="card-img-wrapper relative w-full h-40 flex items-center justify-center mb-3 bg-slate-50 rounded-xl p-2 overflow-hidden">
+
+    @if(isset($isBundle) && $isBundle)
+        <div class="absolute top-2 left-2 z-20">
+            <span class="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">Bundle</span>
+        </div>
+    @endif
+
+    <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
+         onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
+         alt="Product Image"
+         class="max-w-full max-h-full object-contain">
+
+</div>
 
                             <div class="relative z-10 flex-1 flex flex-col justify-between">
                                 <div class="mb-3">
