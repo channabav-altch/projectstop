@@ -488,11 +488,10 @@ public function teamReport(\Illuminate\Http\Request $request)
     $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
-    // ២. ទាញយកបញ្ជី Users
     $userQuery = \DB::table('users')
         ->select('users.id', 'users.name', 'users.email', 'users.role')
 
-        // រាប់ចំនួន វិក្កយបត្រ
+        // ១. រាប់ចំនួន វិក្កយបត្រ
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COUNT(*)')
                   ->from('orders')
@@ -500,16 +499,22 @@ public function teamReport(\Illuminate\Http\Request $request)
                   ->whereDate('orders.created_at', $date);
         }, 'count_invoices')
 
-        // 🌟 [បន្ថែមថ្មី] រាប់ចំនួន អតិថិជន (ដោយរាប់ customer_id មិនឱ្យជាន់គ្នា)
+        // ២. 🌟 រាប់ចំនួន អតិថិជន (ទោះអត់ជ្រើសរើសឈ្មោះក៏រាប់ដែរ)
+        // យើងបង្កើតឈ្មោះ ២ ផ្សេងគ្នា ដើម្បីឲ្យច្បាស់ថា HTML របស់បងហៅឈ្មោះមួយណាក៏ចេញលេខដែរ
         ->selectSub(function ($query) use ($date) {
-            $query->selectRaw('COUNT(DISTINCT orders.customer_id)')
+            $query->selectRaw('COUNT(DISTINCT COALESCE(orders.customer_id, orders.id))')
                   ->from('orders')
                   ->whereColumn('orders.user_id', 'users.id')
-                  ->whereDate('orders.created_at', $date)
-                  ->whereNotNull('orders.customer_id'); // មិនរាប់បញ្ចូលអ្នកដែលមិនបានបញ្ជូលឈ្មោះអតិថិជន
+                  ->whereDate('orders.created_at', $date);
         }, 'count_customers')
+        ->selectSub(function ($query) use ($date) {
+            $query->selectRaw('COUNT(DISTINCT COALESCE(orders.customer_id, orders.id))')
+                  ->from('orders')
+                  ->whereColumn('orders.user_id', 'users.id')
+                  ->whereDate('orders.created_at', $date);
+        }, 'total_customers')
 
-        // បូកសរុប ទឹកប្រាក់
+        // ៣. បូកសរុប ទឹកប្រាក់
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COALESCE(SUM(total_amount), 0)')
                   ->from('orders')
@@ -517,7 +522,7 @@ public function teamReport(\Illuminate\Http\Request $request)
                   ->whereDate('orders.created_at', $date);
         }, 'sum_total_sales')
 
-        // បូកសរុប ចំនួនឯកតា
+        // ៤. បូកសរុប ចំនួនឯកតា
         ->selectSub(function ($query) use ($date) {
             $query->selectRaw('COALESCE(SUM(order_items.qty), 0)')
                   ->from('order_items')
@@ -536,7 +541,7 @@ public function teamReport(\Illuminate\Http\Request $request)
 
     $reports = $userQuery->paginate(15);
 
-    // ៣. គណនាទឹកប្រាក់សរុប
+    // ៥. គណនាទឹកប្រាក់សរុបប្រចាំថ្ងៃ សម្រាប់ប្រអប់ខាងលើ
     $totalRevenue = \DB::table('orders')->whereDate('created_at', $date)->sum('total_amount') ?? 0;
     $retailRevenue = $totalRevenue;
     $wholesaleRevenue = 0;
