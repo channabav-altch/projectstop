@@ -151,10 +151,12 @@
                             @endif
 
                             <div class="card-img-wrapper relative w-full h-32 flex items-center justify-center mb-3 bg-slate-50 rounded-xl overflow-hidden">
-                    <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
+                    <!-- ដាក់កូដរូបភាពថ្មីនៅទីនេះ แทนที่กូដចាស់ -->
+<img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
      onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
      alt="Product Image"
      class="w-full h-full object-cover">
+<!-- ចប់កូដរូបភាពថ្មី -->
                             </div>
 
                             <div class="relative z-10 flex-1 flex flex-col justify-between">
