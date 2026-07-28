@@ -127,7 +127,7 @@
 
                                 <td class="px-6 py-3">
                                     <p class="font-bold text-slate-200 line-clamp-1">{{ $item->product_name }}</p>
-                                    <p class="text-[10px] font-mono text-slate-500 mt-0.5">SKU: {{ $item->sku }}</p>
+                                    <p class="text-[10px] font-mono text-slate-500 mt-0.5">SKU: {{ $item->product_code }}</p>
                                 </td>
 
                                 <td class="px-6 py-3">
