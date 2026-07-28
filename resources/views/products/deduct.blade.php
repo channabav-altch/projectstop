@@ -62,7 +62,7 @@
                         <tbody class="divide-y divide-[#1C2C4E]/50">
                             @forelse($products as $item)
                             <tr class="hover:bg-rose-900/20 transition-colors">
-                                <td class="px-6 py-4 font-mono text-slate-400">{{ $item->sku }}</td>
+                                <td class="px-6 py-4 font-mono text-slate-400">{{ $item->product_code }}</td>
                                 <td class="px-6 py-4 font-bold text-slate-200">{{ $item->product_name }}</td>
 
                                 <!-- ស្តុកបច្ចុប្បន្ន -->
