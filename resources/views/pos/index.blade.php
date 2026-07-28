@@ -150,8 +150,7 @@
                             </div>
                             @endif
 
-                            <!-- 🟢 ប្រអប់រូបភាពទំនិញ (តម្រូវរូបភាពឱ្យពេញលេញ ចំកណ្តាល និងមិនដាច់) -->
-<div class="card-img-wrapper relative w-full h-40 flex items-center justify-center mb-3 bg-slate-50 rounded-xl p-2 overflow-hidden">
+                            <div class="card-img-wrapper relative w-full h-40 flex items-center justify-center mb-3 bg-slate-50 rounded-xl p-2 overflow-hidden">
 
     @if(isset($isBundle) && $isBundle)
         <div class="absolute top-2 left-2 z-20">
@@ -162,7 +161,7 @@
     <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
          onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
          alt="Product Image"
-         class="max-w-full max-h-full object-contain">
+         class="max-w-full max-h-full object-contain mx-auto">
 
 </div>
 
