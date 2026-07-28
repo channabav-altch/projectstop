@@ -115,7 +115,7 @@
                                 <td class="px-6 py-3">
                                     <div class="w-12 h-12 rounded-xl bg-[#0B132B] border border-[#1C2C4E] overflow-hidden flex items-center justify-center p-1">
                                         @if($item->image)
-                                           <img src="{{ $item->image ? asset('storage/' . $item->image) : 'https://ui-avatars.com/api/?name=No+Image&background=E2E8F0&color=64748B&size=150' }}"
+                                          <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=No+Image&background=E2E8F0&color=64748B&size=150' }}"
      onerror="this.src='https://ui-avatars.com/api/?name=No+Image&background=E2E8F0&color=64748B&size=150'"
      alt="Product Image"
      class="w-full h-full object-cover">
