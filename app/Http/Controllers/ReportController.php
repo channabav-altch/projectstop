@@ -485,13 +485,13 @@ public function teamReport(\Illuminate\Http\Request $request)
 {
     $date = $request->input('date', $request->input('selectedDate', date('Y-m-d')));
     $type = $request->input('type', 'all');
+    $status = $request->input('status', 'all'); // បន្ថែមការចាប់យក status
     $search = $request->input('search');
     $expensePeriod = $request->input('expense_period', 'daily');
 
     // ១. គណនាទិន្នន័យសរុប (ប្រអប់ខាងលើ)
     $totalRevenue = \DB::table('orders')->whereDate('created_at', $date)->sum('total_amount') ?? 0;
 
-    // ចាប់យកទិន្នន័យលក់រាយ (ដោយបូកបញ្ចូល walkin និង delivery ព្រោះវាជាការលក់រាយទូទៅ)
     $retailRevenue = \DB::table('orders')
         ->whereDate('created_at', $date)
         ->where(function($q) {
@@ -533,7 +533,7 @@ public function teamReport(\Illuminate\Http\Request $request)
             }
         }, 'count_invoices')
 
-        // រាប់ចំនួនអតិថិជនសរុប (ដាក់ឈ្មោះ 2 ប្រភេទការពារ error)
+        // រាប់ចំនួនអតិថិជនសរុប
         ->selectSub(function ($query) use ($date, $type) {
             $query->selectRaw('COUNT(*)')->from('orders')
                   ->whereColumn('orders.user_id', 'users.id')
@@ -597,15 +597,37 @@ public function teamReport(\Illuminate\Http\Request $request)
             }
         }, 'sum_total_units');
 
+    // ត្រងតាមការស្វែងរកឈ្មោះ
     if ($search) {
         $userQuery->where('users.name', 'LIKE', "%{$search}%");
+    }
+
+    // ⭐️ ត្រងយកតែបុគ្គលិកណាដែល "មានលក់" (status=active)
+    if ($status === 'active') {
+        $userQuery->whereExists(function ($query) use ($date, $type) {
+            $query->select(\DB::raw(1))
+                  ->from('orders')
+                  ->whereColumn('orders.user_id', 'users.id')
+                  ->whereDate('orders.created_at', $date);
+
+            // ត្រូវប្រាកដថាការលក់នោះ ត្រូវនឹងប្រភេទ (រាយ/ដុំ) ដែលគេកំពុងចុចមើលដែរ
+            if ($type && $type !== 'all') {
+                if ($type === 'retail') {
+                    $query->where(function($q) {
+                        $q->whereIn('customer_type', ['retail', 'walkin', 'delivery'])->orWhereNull('customer_type');
+                    });
+                } else {
+                    $query->where('customer_type', $type);
+                }
+            }
+        });
     }
 
     $reports = $userQuery->paginate(15);
     $expenses = \DB::table('expenses')->whereDate('created_at', $date)->orderBy('id', 'desc')->get();
 
     return view('reports.team', array_merge(compact(
-        'reports', 'date', 'type', 'search', 'totalRevenue', 'retailRevenue', 'wholesaleRevenue',
+        'reports', 'date', 'type', 'status', 'search', 'totalRevenue', 'retailRevenue', 'wholesaleRevenue',
         'expenses', 'expensePeriod', 'totalCustomers', 'retailCustomers', 'wholesaleCustomers'
     ), [
         'selectedDate'        => $date,
