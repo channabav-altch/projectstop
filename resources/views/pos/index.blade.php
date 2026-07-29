@@ -176,18 +176,21 @@
                             </div>
                             @endif
 
-                            <div class="card-img-wrapper relative w-full h-40 flex items-center justify-center mb-3 bg-slate-50 rounded-xl p-2 overflow-hidden">
+                            <!-- 🟢 កូដស៊ុមរូបភាពផលិតផល (សម្រួលរួចរាល់ ស្អាត និងពេញលេញ) -->
+<div class="card-img-wrapper relative w-full h-40 flex items-center justify-center mb-3 bg-slate-50 rounded-xl p-2 overflow-hidden">
 
+    <!-- ផ្នែកបង្ហាញពាក្យ Bundle (បើមាន) -->
     @if(isset($isBundle) && $isBundle)
         <div class="absolute top-2 left-2 z-20">
-            <span class="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">Bundle</span>
+            <span class="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">Bundle</span>
         </div>
     @endif
 
+    <!-- ផ្នែករូបភាពផលិតផល -->
     <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
          onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
          alt="Product Image"
-         class="max-w-full max-h-full object-contain mx-auto">
+         class="w-full h-full object-contain">
 
 </div>
 
