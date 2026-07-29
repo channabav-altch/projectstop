@@ -162,11 +162,11 @@
     @forelse($products ?? [] as $item)
         @php
             $isBundle = str_contains($item->category ?? '', 'ឈុត') || str_contains($item->category ?? '', 'ប៊ណ្ឌល') || str_contains(strtolower($item->category ?? ''), 'bundle');
-            // ទាញយកចំនួនស្តុកដោយផ្ទៀងផ្ទាត់គ្រប់ Column ដែលអាចមានក្នុង Database
-            $stockValue = $item->stock ?? $item->qty ?? $item->quantity ?? 0;
+            // ទាញយក Column qty ពី Database ផ្ទាល់តែម្តង
+            $stockValue = $item->qty ?? $item->stock ?? $item->quantity ?? 0;
         @endphp
 
-        <!-- 🟢 ប្រអប់កាតផលិតផល (កែសម្រួលកម្ពស់និង padding ឱ្យមានរបៀបរៀបរយល្អ) -->
+        <!-- 🟢 ប្រអប់កាតផលិតផល -->
         <div onclick="addToCart({{ $item->id }}, '{{ addslashes($item->product_name ?? $item->name) }}', {{ floatval($item->sale_price ?? $item->price ?? 0) }})"
              class="product-card group relative bg-white border border-slate-200 rounded-2xl p-3.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 cursor-pointer flex flex-col justify-between"
              style="min-height: 280px;"
@@ -191,7 +191,7 @@
 
                 <div class="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-auto">
                     <span class="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-bold">
-                        ស្តុក: {{ $stockValue }}
+                        ស្តុក: {{ number_format($stockValue) }}
                     </span>
                     <span class="text-[15px] font-black text-[#5642F5] tracking-tight whitespace-nowrap">
                         {{ number_format($item->sale_price ?? $item->price ?? 0, 2) }} <span class="text-xs">$</span>
