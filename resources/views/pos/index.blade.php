@@ -157,119 +157,105 @@
                     </div>
                 </div>
 
-                <div id="productGrid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 lg:grid-cols-5 gap-4 content-start custom-scrollbar bg-slate-50/30">
+                <div id="productGrid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 content-start custom-scrollbar bg-slate-50/30">
 
-                    @forelse($products ?? [] as $item)
-                        @php
-                            // កំណត់លក្ខខណ្ឌថាតើទំនិញនេះជា "ឈុត" ឬអត់ ដោយមើលតាម Category របស់វា
-                            $isBundle = str_contains($item->category ?? '', 'ឈុត') || str_contains(strtolower($item->category ?? ''), 'bundle');
-                        @endphp
+    @forelse($products ?? [] as $item)
+        @php
+            $isBundle = str_contains($item->category ?? '', 'ឈុត') || str_contains($item->category ?? '', 'ប៊ណ្ឌល') || str_contains(strtolower($item->category ?? ''), 'bundle');
+        @endphp
 
-                        <div onclick="addToCart({{ $item->id }}, '{{ addslashes($item->product_name ?? $item->name) }}', {{ floatval($item->sale_price ?? $item->price ?? 0) }})"
-                             class="product-card group relative bg-white border border-slate-200 rounded-3xl p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 cursor-pointer overflow-hidden flex flex-col h-full"
-                             data-category="{{ $item->category ?? 'ទូទៅ' }}"
-                             data-search="{{ strtolower(($item->product_name ?? $item->name) . ' ' . ($item->sku ?? '')) }}">
+        <!-- 🟢 ប្រអប់កាតផលិតផល (រៀបចំត្រឹមត្រូវ មិនជាន់គ្នា) -->
+        <div onclick="addToCart({{ $item->id }}, '{{ addslashes($item->product_name ?? $item->name) }}', {{ floatval($item->sale_price ?? $item->price ?? 0) }})"
+             class="product-card group relative bg-white border border-slate-200 rounded-2xl p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 cursor-pointer overflow-hidden flex flex-col justify-between min-h-[220px]"
+             data-category="{{ $item->category ?? 'ទូទៅ' }}"
+             data-search="{{ strtolower(($item->product_name ?? $item->name) . ' ' . ($item->sku ?? '')) }}">
 
-                            @if($isBundle)
-                            <div class="absolute top-4 left-4 z-20">
-                                <span class="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">ឈុត</span>
-                            </div>
-                            @endif
-
-                            <!-- 🟢 កូដស៊ុមរូបភាពផលិតផល (សម្រួលរួចរាល់ ស្អាត និងពេញលេញ) -->
-<div class="card-img-wrapper relative w-full h-40 flex items-center justify-center mb-3 bg-slate-50 rounded-xl p-2 overflow-hidden">
-
-    <!-- ផ្នែកបង្ហាញពាក្យ Bundle (បើមាន) -->
-    @if(isset($isBundle) && $isBundle)
-        <div class="absolute top-2 left-2 z-20">
-            <span class="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">Bundle</span>
-        </div>
-    @endif
-
-    <!-- ផ្នែករូបភាពផលិតផល -->
-    <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
-         onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
-         alt="Product Image"
-         class="w-full h-full object-contain">
-
-</div>
-
-                            <div class="relative z-10 flex-1 flex flex-col justify-between">
-                                <div class="mb-3">
-                                    <h3 class="font-extrabold text-slate-900 text-[13px] leading-tight mb-1 group-hover:text-[#5642F5] transition-colors line-clamp-2">{{ $item->product_name ?? $item->name }}</h3>
-                                </div>
-                                <div class="flex items-center justify-between border-t border-slate-100 pt-3 mt-auto">
-                                    <span class="bg-indigo-50 text-[#5642F5] text-[10px] font-bold px-2 py-1 rounded-lg whitespace-nowrap">1 {{ $item->unit ?? 'មុខ' }}</span>
-                                    <span class="text-[16px] font-black text-[#5642F5] tracking-tight whitespace-nowrap">{{ number_format($item->sale_price ?? $item->price ?? 0, 2) }} <span class="text-xs">$</span></span>
-                                </div>
-                            </div>
-
-                          <!-- 🟢 ទម្រង់ប៊ូតុងចុច (Click) បង្ហាញប្រអប់ខ្មៅដ៏ស្រស់ស្អាត 🟢 -->
-  <!-- 🟢 ទម្រង់ប្រអប់ឈុត (មានប្រព័ន្ធ X-Ray ឆែកបញ្ហា) 🟢 -->
-    @if($isBundle ?? $item->is_bundle ?? false)
-    <div class="absolute z-50 left-2 top-2 bundle-container" onclick="event.stopPropagation()">
-
-        <button type="button" onclick="window.toggleBundle(this)" class="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black px-2 py-1 rounded shadow-md flex items-center gap-1 cursor-pointer transition-all border border-orange-400 relative z-10">
-            📦 ឈុត
-        </button>
-
-        <div class="bundle-popup hidden absolute left-0 top-full mt-2 w-[280px] bg-[#161F33] border border-slate-700/50 rounded-xl shadow-2xl p-4 transition-all duration-300 z-50">
-
-            <div class="flex items-center justify-between mb-3 border-b border-slate-700/80 pb-2">
-                <div class="flex items-center gap-2">
-                    <span class="text-yellow-500 text-sm">📦</span>
-                    <!-- 🟢 X-Ray បង្ហាញលេខ ID មេ -->
-                    <span class="text-[12px] font-black text-slate-100 uppercase tracking-wide">
-                        កូនរបស់ឈុត (ID: {{ $item->id }})
-                    </span>
-                </div>
-                <button type="button" onclick="this.closest('.bundle-popup').classList.add('hidden')" class="text-slate-400 hover:text-rose-500 text-[14px] font-bold px-1 transition-colors">✕</button>
+            <!-- ស៊ុមរូបភាពផលិតផល -->
+            <div class="card-img-wrapper relative w-full h-32 flex items-center justify-center mb-2 bg-slate-50 rounded-xl p-2 overflow-hidden">
+                <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
+                     onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
+                     alt="Product Image"
+                     class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300">
             </div>
 
-            <ul class="space-y-2 overflow-y-auto max-h-[250px] hide-scroll pr-1">
-                @php
-                    // កាយរកកូនដោយប្រើ Column របស់បង
-                    $subProducts = \DB::table('bundle_items')
-                                     ->where('product_id', $item->id)
-                                     ->orWhere('product_bundle_id', $item->id)
-                                     ->get();
-                @endphp
-
-                @forelse($subProducts as $sub)
-                    @php
-                        $childId = $sub->product_id ?? $sub->item_id;
-                        $realProduct = \DB::table('products')->where('id', $childId)->first();
-                        $realName = $realProduct ? ($realProduct->product_name ?? $realProduct->name ?? 'មិនស្គាល់') : 'មិនស្គាល់ទំនិញ';
-                        $unitName = $realProduct ? ($realProduct->unit ?? 'ឯកតា') : 'ឯកតា';
-                        $qty = $sub->quantity ?? $sub->qty ?? 1;
-                    @endphp
-
-                    <li class="flex justify-between items-center gap-3 py-1.5 border-b border-slate-700/30 last:border-0">
-                        <div class="flex items-start gap-2 flex-1">
-                            <span class="text-yellow-500 text-[12px] mt-0.5 font-black">▪</span>
-                            <span class="text-[11px] text-slate-200 font-bold leading-tight uppercase">{{ $realName }}</span>
-                        </div>
-                        <span class="bg-[#24304A] border border-slate-600/50 text-yellow-400 font-black px-2 py-1 rounded text-[10px] whitespace-nowrap shadow-sm">
-                            x{{ $qty }} {{ $unitName }}
-                        </span>
-                    </li>
-                @empty
-                    <li class="text-center text-[11px] text-rose-400 py-2 font-bold bg-rose-500/10 rounded border border-rose-500/20">
-                        មិនមានទិន្នន័យកូន សម្រាប់ ID: {{ $item->id }} ក្នុង Database ទេ!
-                    </li>
-                @endforelse
-            </ul>
-        </div>
-    </div>
-    @endif
-                            </div>
-                    @empty
-                        <div id="js-empty-state" class="col-span-full py-24 text-center bg-white rounded-3xl border border-dashed border-slate-300">
-                            <span class="text-6xl mb-4 block opacity-50">📭</span>
-                            <p class="text-slate-500 text-lg font-bold">មិនទាន់មានទំនិញក្នុងស្តុកនៅឡើយទេ!</p>
-                        </div>
-                    @endforelse
+            <!-- ព័ត៌មានឈ្មោះ តម្លៃ និងស្តុក -->
+            <div class="flex flex-col flex-grow justify-between">
+                <div class="mb-2">
+                    <h3 class="font-extrabold text-slate-900 text-[13px] leading-tight group-hover:text-[#5642F5] transition-colors line-clamp-2">
+                        {{ $item->product_name ?? $item->name }}
+                    </h3>
                 </div>
+                <div class="flex items-center justify-between border-t border-slate-100 pt-2 mt-auto">
+                    <span class="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded font-medium">ស្តុក: {{ $item->stock ?? 0 }}</span>
+                    <span class="text-[15px] font-black text-[#5642F5] tracking-tight whitespace-nowrap">
+                        {{ number_format($item->sale_price ?? $item->price ?? 0, 2) }} <span class="text-xs">$</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 🟢 ប៊ូតុង និងប្រអប់បង្ហាញកូនឈុត (Bundle Dropdown) -->
+            @if($isBundle)
+            <div class="absolute z-50 left-2 top-2 bundle-container" onclick="event.stopPropagation()">
+                <button type="button" onclick="window.toggleBundle(this)" class="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black px-2 py-1 rounded shadow-md flex items-center gap-1 cursor-pointer transition-all border border-orange-400 relative z-10">
+                    📦 ឈុត
+                </button>
+
+                <div class="bundle-popup hidden absolute left-0 top-full mt-2 w-[280px] bg-[#161F33] border border-slate-700/50 rounded-xl shadow-2xl p-4 transition-all duration-300 z-50">
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-700/80 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-yellow-500 text-sm">📦</span>
+                            <span class="text-[12px] font-black text-slate-100 uppercase tracking-wide">
+                                កូនរបស់ឈុត (ID: {{ $item->id }})
+                            </span>
+                        </div>
+                        <button type="button" onclick="this.closest('.bundle-popup').classList.add('hidden')" class="text-slate-400 hover:text-rose-500 text-[14px] font-bold px-1 transition-colors">✕</button>
+                    </div>
+
+                    <ul class="space-y-2 overflow-y-auto max-h-[250px] hide-scroll pr-1">
+                        @php
+                            $subProducts = \DB::table('bundle_items')
+                                               ->where('product_id', $item->id)
+                                               ->orWhere('product_bundle_id', $item->id)
+                                               ->get();
+                        @endphp
+
+                        @forelse($subProducts as $sub)
+                            @php
+                                $childId = $sub->product_id ?? $sub->item_id;
+                                $realProduct = \DB::table('products')->where('id', $childId)->first();
+                                $realName = $realProduct ? ($realProduct->product_name ?? $realProduct->name ?? 'មិនស្គាល់') : 'មិនស្គាល់ទំនិញ';
+                                $unitName = $realProduct ? ($realProduct->unit ?? 'ឯកតា') : 'ឯកតា';
+                                $qty = $sub->quantity ?? $sub->qty ?? 1;
+                            @endphp
+
+                            <li class="flex justify-between items-center gap-3 py-1.5 border-b border-slate-700/30 last:border-0">
+                                <div class="flex items-start gap-2 flex-1">
+                                    <span class="text-yellow-500 text-[12px] mt-0.5 font-black">▪</span>
+                                    <span class="text-[11px] text-slate-200 font-bold leading-tight uppercase">{{ $realName }}</span>
+                                </div>
+                                <span class="bg-[#24304A] border border-slate-600/50 text-yellow-400 font-black px-2 py-1 rounded text-[10px] whitespace-nowrap shadow-sm">
+                                    x{{ $qty }} {{ $unitName }}
+                                </span>
+                            </li>
+                        @empty
+                            <li class="text-center text-[11px] text-rose-400 py-2 font-bold bg-rose-500/10 rounded border border-rose-500/20">
+                                មិនមានទិន្នន័យកូន សម្រាប់ ID: {{ $item->id }} ក្នុង Database ទេ!
+                            </li>
+                        @endforelse
+                    </ul>
+                </div>
+            </div>
+            @endif
+
+        </div>
+    @empty
+        <div id="js-empty-state" class="col-span-full py-24 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+            <span class="text-6xl mb-4 block opacity-50">📭</span>
+            <p class="text-slate-500 text-lg font-bold">មិនទាន់មានទំនិញក្នុងស្តុកនៅឡើយទេ!</p>
+        </div>
+    @endforelse
+
+</div>
                 </div>
 
             <div class="w-full lg:w-[380px] bg-white rounded-3xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden z-10">
