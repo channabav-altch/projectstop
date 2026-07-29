@@ -10,13 +10,39 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8FAFC; }
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #CBD5E1; border-radius: 10px; }
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8FAFC; }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #CBD5E1; border-radius: 10px; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* ដាក់កូដ CSS ថ្មីរបស់អ្នកនៅត្រង់នេះ */
+    .product-container {
+      height: calc(100vh - 200px);
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .product-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 180px;
+      background-color: white;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .product-image {
+      width: 100%;
+      height: 120px;
+      object-fit: contain;
+      margin-bottom: 8px;
+    }
+</style>
 </head>
 
 <body class="text-slate-800 m-0 p-0 antialiased bg-[#0A1122] selection:text-white overflow-hidden">
