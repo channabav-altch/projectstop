@@ -164,22 +164,23 @@
             $isBundle = str_contains($item->category ?? '', 'ឈុត') || str_contains($item->category ?? '', 'ប៊ណ្ឌល') || str_contains(strtolower($item->category ?? ''), 'bundle');
         @endphp
 
-        <!-- 🟢 ប្រអប់កាតផលិតផល (លុប overflow-hidden ចេញ ដើម្បីឱ្យឈ្មោះនិងតម្លៃបង្ហាញពេញលេញ) -->
+        <!-- 🟢 បន្ថែម style="min-height: 270px;" បង្ខំកម្ពស់ផ្ទាល់ដើម្បីធានាថាមិនរុញធ្លាក់ -->
         <div onclick="addToCart({{ $item->id }}, '{{ addslashes($item->product_name ?? $item->name) }}', {{ floatval($item->sale_price ?? $item->price ?? 0) }})"
-             class="product-card group relative bg-white border border-slate-200 rounded-2xl p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 cursor-pointer flex flex-col justify-between min-h-[230px]"
+             class="product-card group relative bg-white border border-slate-200 rounded-2xl p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 cursor-pointer flex flex-col justify-between"
+             style="min-height: 270px;"
              data-category="{{ $item->category ?? 'ទូទៅ' }}"
              data-search="{{ strtolower(($item->product_name ?? $item->name) . ' ' . ($item->sku ?? '')) }}">
 
-            <!-- ស៊ុមរូបភាពផលិតផល (បន្ថយមក h-28 ដើម្បីទុកកន្លែងឱ្យឈ្មោះ និងតម្លៃ) -->
-            <div class="card-img-wrapper relative w-full h-28 flex items-center justify-center mb-2 bg-slate-50 rounded-xl p-2">
+            <!-- ស៊ុមរូបភាពផលិតផល (កំណត់កម្ពស់ថេរ h-32 និង style height: 128px ផ្ទាល់) -->
+            <div class="card-img-wrapper relative w-full flex items-center justify-center mb-2 bg-slate-50 rounded-xl p-2 shrink-0" style="height: 128px;">
                 <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
                      onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
                      alt="Product Image"
                      class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300">
             </div>
 
-            <!-- ព័ត៌មានឈ្មោះ តម្លៃ និងស្តុក (បង្ហាញច្បាស់ល្អ មិនត្រូវបានកាត់) -->
-            <div class="flex flex-col flex-grow justify-between">
+            <!-- ព័ត៌មានឈ្មោះ តម្លៃ និងស្តុក (ដាក់ flex-grow ឱ្យវាទាញយកចន្លោះប្រហោងដែលសល់មកបង្ហាញឈ្មោះពេញ) -->
+            <div class="flex flex-col flex-grow justify-between mt-1">
                 <div class="mb-1">
                     <h3 class="font-extrabold text-slate-900 text-[13px] leading-tight group-hover:text-[#5642F5] transition-colors line-clamp-2">
                         {{ $item->product_name ?? $item->name }}
