@@ -162,8 +162,9 @@
     @forelse($products ?? [] as $item)
         @php
             $isBundle = str_contains($item->category ?? '', 'ឈុត') || str_contains($item->category ?? '', 'ប៊ណ្ឌល') || str_contains(strtolower($item->category ?? ''), 'bundle');
-            // ទាញយក Column qty ពី Database ផ្ទាល់តែម្តង
-            $stockValue = $item->qty ?? $item->stock ?? $item->quantity ?? 0;
+
+            // ទាញយកស្តុកផ្ទាល់ពី Database តាម ID ធានាថាចេញលេខមកវិញ ១០០% ទោះ Controller មិនបាន Select ក៏ដោយ
+            $stockValue = $item->qty ?? \DB::table('products')->where('id', $item->id)->value('qty') ?? 0;
         @endphp
 
         <!-- 🟢 ប្រអប់កាតផលិតផល -->
