@@ -157,30 +157,30 @@
                     </div>
                 </div>
 
-                <div id="productGrid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 content-start custom-scrollbar bg-slate-50/30">
+               <div id="productGrid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 content-start custom-scrollbar bg-slate-50/30">
 
     @forelse($products ?? [] as $item)
         @php
             $isBundle = str_contains($item->category ?? '', 'ឈុត') || str_contains($item->category ?? '', 'ប៊ណ្ឌល') || str_contains(strtolower($item->category ?? ''), 'bundle');
         @endphp
 
-        <!-- 🟢 ប្រអប់កាតផលិតផល (រៀបចំត្រឹមត្រូវ មិនជាន់គ្នា) -->
+        <!-- 🟢 ប្រអប់កាតផលិតផល (លុប overflow-hidden ចេញ ដើម្បីឱ្យឈ្មោះនិងតម្លៃបង្ហាញពេញលេញ) -->
         <div onclick="addToCart({{ $item->id }}, '{{ addslashes($item->product_name ?? $item->name) }}', {{ floatval($item->sale_price ?? $item->price ?? 0) }})"
-             class="product-card group relative bg-white border border-slate-200 rounded-2xl p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 cursor-pointer overflow-hidden flex flex-col justify-between min-h-[220px]"
+             class="product-card group relative bg-white border border-slate-200 rounded-2xl p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 cursor-pointer flex flex-col justify-between min-h-[230px]"
              data-category="{{ $item->category ?? 'ទូទៅ' }}"
              data-search="{{ strtolower(($item->product_name ?? $item->name) . ' ' . ($item->sku ?? '')) }}">
 
-            <!-- ស៊ុមរូបភាពផលិតផល -->
-            <div class="card-img-wrapper relative w-full h-32 flex items-center justify-center mb-2 bg-slate-50 rounded-xl p-2 overflow-hidden">
+            <!-- ស៊ុមរូបភាពផលិតផល (បន្ថយមក h-28 ដើម្បីទុកកន្លែងឱ្យឈ្មោះ និងតម្លៃ) -->
+            <div class="card-img-wrapper relative w-full h-28 flex items-center justify-center mb-2 bg-slate-50 rounded-xl p-2">
                 <img src="{{ $item->image ? asset($item->image) : 'https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150' }}"
                      onerror="this.src='https://ui-avatars.com/api/?name=NI&background=E2E8F0&color=64748B&size=150'"
                      alt="Product Image"
                      class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300">
             </div>
 
-            <!-- ព័ត៌មានឈ្មោះ តម្លៃ និងស្តុក -->
+            <!-- ព័ត៌មានឈ្មោះ តម្លៃ និងស្តុក (បង្ហាញច្បាស់ល្អ មិនត្រូវបានកាត់) -->
             <div class="flex flex-col flex-grow justify-between">
-                <div class="mb-2">
+                <div class="mb-1">
                     <h3 class="font-extrabold text-slate-900 text-[13px] leading-tight group-hover:text-[#5642F5] transition-colors line-clamp-2">
                         {{ $item->product_name ?? $item->name }}
                     </h3>
